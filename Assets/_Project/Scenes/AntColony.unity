@@ -1,0 +1,744 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 10
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 3
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 0
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 0}
+  m_UseRadianceAmbientProbe: 0
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 0
+    m_EnableRealtimeLightmaps: 0
+  m_LightmapEditorSettings:
+    serializedVersion: 12
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_AtlasSize: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 2
+    m_BakeBackend: 2
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 512
+    m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 256
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
+    m_PVREnvironmentMIS: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 1
+    m_PVRFilteringGaussRadiusAO: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingSettings: {fileID: 0}
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 3
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    buildHeightMesh: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
+    debug:
+      m_Flags: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &379882232
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 379882235}
+  - component: {fileID: 379882234}
+  - component: {fileID: 379882233}
+  m_Layer: 0
+  m_Name: Main Camera
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!20 &379882233
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379882232}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.35686275, g: 0.42352942, b: 0.6039216, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 1
+  orthographic size: 6
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!81 &379882234
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379882232}
+  m_Enabled: 1
+--- !u!4 &379882235
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379882232}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 3, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1106839304
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1106839306}
+  - component: {fileID: 1106839305}
+  m_Layer: 0
+  m_Name: Global Light 2D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1106839305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106839304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 073797afb82c5a1438f328866b10b3f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.2D.Runtime::UnityEngine.Rendering.Universal.Light2D
+  m_ComponentVersion: 3
+  m_LightType: 4
+  m_BlendStyleIndex: 0
+  m_FalloffIntensity: 0.5
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 1
+  m_LightVolumeIntensity: 1
+  m_LightVolumeEnabled: 0
+  m_ApplyToSortingLayers: 00000000
+  m_LightCookieSprite: {fileID: 0}
+  m_DeprecatedPointLightCookieSprite: {fileID: 0}
+  m_LightOrder: 0
+  m_AlphaBlendOnOverlap: 0
+  m_OverlapOperation: 0
+  m_NormalMapDistance: 3
+  m_NormalMapQuality: 2
+  m_UseNormalMap: 0
+  m_ShadowsEnabled: 1
+  m_ShadowIntensity: 0.75
+  m_ShadowSoftness: 0.3
+  m_ShadowSoftnessFalloffIntensity: 0.5
+  m_ShadowVolumeIntensityEnabled: 0
+  m_ShadowVolumeIntensity: 0.75
+  m_LocalBounds:
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
+  m_PointLightInnerAngle: 360
+  m_PointLightOuterAngle: 360
+  m_PointLightInnerRadius: 0
+  m_PointLightOuterRadius: 1
+  m_ShapeLightParametricSides: 5
+  m_ShapeLightParametricAngleOffset: 0
+  m_ShapeLightParametricRadius: 1
+  m_ShapeLightFalloffSize: 0.5
+  m_ShapeLightFalloffOffset: {x: 0, y: 0}
+  m_ShapePath:
+  - {x: -0.5, y: -0.5, z: 0}
+  - {x: 0.5, y: -0.5, z: 0}
+  - {x: 0.5, y: 0.5, z: 0}
+  - {x: -0.5, y: 0.5, z: 0}
+--- !u!4 &1106839306
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106839304}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1819170227
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1819170229}
+  - component: {fileID: 1819170228}
+  m_Layer: 0
+  m_Name: Colony Game
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1819170228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1819170227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f255041f4184f1b58a5b54d4ec5367c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AntColony.ColonyGame
+  settings:
+    worldHalfWidth: 30
+    worldHalfHeight: 20
+    worldSeed: 2024
+    nestTopY: -150
+    nestWidth: 33
+    nestDepth: 36
+    rockAmount: 0.12
+    digTime: 1.2
+    startingFood: 40
+    startingWorkers: 4
+    startingSoldiers: 1
+    startingBuilders: 1
+    queenMaxHealth: 100
+    queenRegenPerSecond: 0.5
+    eggLayInterval: 3
+    antFoodPerMinute: 0.9
+    queenFoodPerMinute: 1.5
+    starvationDamagePerSecond: 1
+    eggCost: 3
+    eggTime: 8
+    foodPerFeeding: 2
+    worker:
+      larvaFood: 5
+      larvaTime: 15
+    soldier:
+      larvaFood: 12
+      larvaTime: 25
+    builder:
+      larvaFood: 7
+      larvaTime: 18
+    baseStorage: 60
+    storageRoomCapacity: 40
+    storageRoomCost: 12
+    cradleCost: 6
+    gardenCost: 18
+    roomBuildTime: 4
+    roomRefund: 0.5
+    gardenCycleTime: 5
+    gardenFoodPerLeaf: 2
+    workerSpeed: 2.2
+    workerHealth: 20
+    soldierSpeed: 2.6
+    soldierHealth: 40
+    soldierDamage: 7
+    soldierAttackRange: 0.5
+    soldierAttackCooldown: 0.8
+    soldierGuardRadius: 6
+    builderSpeed: 2
+    builderHealth: 18
+    repairPerSecond: 10
+    startingStone: 6
+    stoneVeinAmount: 0.08
+    stonePerVeinTile: 3
+    stoneChancePerSoil: 0.3
+    seedCacheChance: 0.04
+    seedCacheFoodMin: 5
+    seedCacheFoodMax: 12
+    grubChance: 0.03
+    grubFood: 4
+    wallCost: 2
+    wallBuildTime: 3
+    wallHealth: 100
+    towerCost: 12
+    towerStoneCost: 10
+    towerBuildTime: 10
+    towerHealth: 150
+    towerRange: 5.5
+    towerDamage: 6
+    towerCooldown: 1
+    startingFoodSources: 10
+    maxFoodSources: 18
+    foodSpawnInterval: 4
+    foodMinDistanceFromNest: 5
+    leafChance: 0.55
+    foodClusterChance: 0.75
+    foodClusterSpread: 2.6
+    foodClusterSameKind: 0.7
+    firstWaveDelay: 10
+    timeBetweenWaves: 75
+    wavesToWin: 10
+    enemiesInFirstWave: 2
+    extraEnemiesPerWave: 1
+    enemyHealthGrowthPerWave: 0.08
+    enemyTypes:
+    - name: Beetle
+      prefab: {fileID: 2117236814300365928, guid: 35cf52c52d39e3e45a089a72944307da, type: 3}
+      kind: 0
+      firstWave: 1
+      speed: 0.9
+      health: 40
+      damage: 3
+      attackRange: 0.4
+      attackCooldown: 1.2
+      bodyWidth: 1.1
+      foodWhenKilled: 3
+    - name: Spider
+      prefab: {fileID: 7279595955966259012, guid: 36e275e18c1d14f5096def8160d8e79c, type: 3}
+      kind: 1
+      firstWave: 4
+      speed: 1.7
+      health: 28
+      damage: 6
+      attackRange: 0.4
+      attackCooldown: 0.9
+      bodyWidth: 1.25
+      foodWhenKilled: 2
+  art:
+    ant: []
+    antAttack: []
+    antFacesLeft: 0
+    antTopDown: []
+    antTopDownAttack: []
+    beetle: []
+    beetleAttack: []
+    spider: []
+    spiderAttack: []
+    leaf: {fileID: 0}
+    acorn: {fileID: 0}
+    berry: {fileID: 0}
+    trees: []
+  prefabs:
+    worker: {fileID: 912901624469830964, guid: 40df47659c2e237869bc66468f22c964, type: 3}
+    soldier: {fileID: 6934668454931365837, guid: df35572651d6612048a70114413c2b34, type: 3}
+    builder: {fileID: 3128155249703605076, guid: 2531e97e8f586ba6e9370f5af19e6c3b, type: 3}
+    queen: {fileID: 5064099301339140523, guid: 709dbb7c78c1747eba2f201e2eb4f8e5, type: 3}
+    wall: {fileID: 1937676091675791048, guid: 781891b286211775aa6fc726acba46ae, type: 3}
+    tower: {fileID: 2191341822263777853, guid: dbec3cd3db7807acb8df6bafedbf95bb, type: 3}
+    leaf: {fileID: 7858691253269003907, guid: 3e37f30145d325d61928c56dcbbe2b32, type: 3}
+    berries: {fileID: 5041026090725435095, guid: 3db96ca7c0b7a881690bfd81c871a9f5, type: 3}
+    acorn: {fileID: 8531959100535047858, guid: 23a2f8ac031d9f5c1a425d2b9b832f6a, type: 3}
+    trees:
+    - {fileID: 5474649917722913257, guid: b7ae0e835841665fa8ec24bb269685de, type: 3}
+    - {fileID: 7544417830123478130, guid: 048d6d3ee412ff989b20926a9a8394bc, type: 3}
+    - {fileID: 128802928822657102, guid: 8b34c32692a03c8a1987505ed7c183a2, type: 3}
+    - {fileID: 3602373835731881536, guid: 777dfbd2143ab76d1931709772dd7a8f, type: 3}
+    bushes:
+    - {fileID: 3552478458712394154, guid: 35ce70d0e325867799cb3fffe26370c1, type: 3}
+    - {fileID: 2578240366919731396, guid: b94608ae7d15f1b7ea964133a1583fcc, type: 3}
+    - {fileID: 3286152416776194050, guid: 97cf2cb7f98c06247b95b2067f1a28ff, type: 3}
+    boulders:
+    - {fileID: 6001720828448419213, guid: 4d71e78896c4f0a0d9b7d074711d9e86, type: 3}
+    - {fileID: 2500348393572734135, guid: 04c815cd98c855328a1cefdd765acead, type: 3}
+    stumps:
+    - {fileID: 2691654848287478104, guid: 2ce05d4f02ad0ad9aaa0cbd5309a7db9, type: 3}
+    logs:
+    - {fileID: 8857746152642502271, guid: 79c34dc2de00d55f0ad59c20bd4a3401, type: 3}
+    flowers:
+    - {fileID: 16975368552276832, guid: 0543f165ea4e56c919fabc03dbb390dd, type: 3}
+    - {fileID: 8575029151116922402, guid: 41efdfc34cfcd5fd080759ebe09f8421, type: 3}
+    - {fileID: 115415795485807275, guid: d0a4b4ea46bbf9ffba7f42217e394f62, type: 3}
+    - {fileID: 5768599553289584289, guid: b9ec5e396ec833212b00ae87f3c6347d, type: 3}
+  effects:
+    soldierBite: {fileID: 1915043509561669840, guid: 256282562dca1884bb3486f5a6361bec, type: 3}
+    enemyBite: {fileID: 1915043509561669840, guid: 256282562dca1884bb3486f5a6361bec, type: 3}
+    queenHit: {fileID: 1915043509561669840, guid: 6e53e854093a4cce993eef035b7e3a76, type: 3}
+    acidHit: {fileID: 0}
+    antDied: {fileID: 1915043509561669840, guid: 256282562dca1884bb3486f5a6361bec, type: 3}
+    enemyDied: {fileID: 0}
+    foodPickedUp: {fileID: 0}
+    foodStored: {fileID: 0}
+    larvaFed: {fileID: 0}
+    eggLaid: {fileID: 0}
+    antHatched: {fileID: 0}
+    gardenMadeFood: {fileID: 0}
+    tileDug: {fileID: 1915043509561669840, guid: 6e53e854093a4cce993eef035b7e3a76, type: 3}
+    digHit: {fileID: 1915043509561669840, guid: 6e53e854093a4cce993eef035b7e3a76, type: 3}
+    stoneFound: {fileID: 0}
+    treasureFound: {fileID: 0}
+    roomBuilt: {fileID: 0}
+    structureBuilt: {fileID: 0}
+    structureDestroyed: {fileID: 0}
+  uiSkin:
+    panel: {fileID: 2800000, guid: 49a1606d702e4514c9968e55b0dba3d6, type: 3}
+    panelBorder: {x: 230, y: 200, z: 150, w: 170}
+    panelBleed: 16
+    card: {fileID: 2800000, guid: 288de0b8e375cad6e977e1b731f4473c, type: 3}
+    cardBorder: {x: 40, y: 40, z: 40, w: 40}
+    actionBar: {fileID: 2800000, guid: 4f70b40e4778ef36a9bf473be14cace6, type: 3}
+    actionBarBorder: {x: 140, y: 190, z: 62, w: 55}
+    actionBarGroove: {x: 60, y: 60, z: 62, w: 55}
+    warningIcon: {fileID: 2800000, guid: 735534e3660e9513493c379bebf0e18d, type: 3}
+    slotNormal: {fileID: 2800000, guid: baaa185aadf05b8368f21da8ea8f44fa, type: 3}
+    slotHover: {fileID: 2800000, guid: 4bb5ed079d0df23ebb92b9b640650072, type: 3}
+    slotPressed: {fileID: 2800000, guid: f1bc8370dffd367988f7dc4973464cc1, type: 3}
+    slotLocked: {fileID: 2800000, guid: 0ba9c6fb19f6e106e992279196decbba, type: 3}
+    slotBorder: {x: 80, y: 80, z: 80, w: 80}
+    menuButton: {fileID: 2800000, guid: bf52ca5fb1e6a190b8a09ee04395d080, type: 3}
+    menuButtonHover: {fileID: 2800000, guid: 3e13ab708fe5c3ba9925f6020f0803d0, type: 3}
+    menuButtonPressed: {fileID: 2800000, guid: f302ce27ab4341df3b53695f56c60e72, type: 3}
+    menuButtonBorder: {x: 130, y: 140, z: 0, w: 0}
+    headerBanner: {fileID: 2800000, guid: fe2c80b7ca9a09fe682a7f0dd7df14ed, type: 3}
+    headerBannerPlank: {x: 160, y: 145, z: 100, w: 50}
+    iconFood: {fileID: 21300000, guid: d0068cf68f903fb04aef174c76ec24b4, type: 3}
+    iconLeaves: {fileID: 21300000, guid: da1ac413371c2d77da51c4afc05fb908, type: 3}
+    iconStone: {fileID: 21300000, guid: c984494c97e0d25d88310b88b8d13092, type: 3}
+    iconRate: {fileID: 21300000, guid: 0098e8bde6e8f37d49d88f95e5d3f53b, type: 3}
+    iconStorage: {fileID: 21300000, guid: efae8298eb1503e8d883987c34eef351, type: 3}
+    iconWorker: {fileID: 21300000, guid: 982f2c5dc4097709fad6e2ba59f2eea5, type: 3}
+    iconSoldier: {fileID: 21300000, guid: 598ff9eb8773a144a961a164bf3a1222, type: 3}
+    iconBuilder: {fileID: 21300000, guid: d4e891f418efc56f39f5a3f88ddcc774, type: 3}
+    iconEgg: {fileID: 21300000, guid: 8b74f8857338640599373d4599c585d4, type: 3}
+    iconEggHatching: {fileID: 21300000, guid: cb4663c1aa5d15739b86a5aa16505a0e, type: 3}
+    buttonHoverParticles: {fileID: 3812709656321731882, guid: ba699473954a46bf08e1675327e11233, type: 3}
+    buttonHoverParticleScale: 36
+    buttonHoverParticleCooldown: 0.12
+    frameScale: 0.32
+  sound:
+    masterVolume: 1
+    musicVolume: 0.66
+    eventMusicVolume: 0.8
+    effectsVolume: 0.8
+    pausedMusicFraction: 0.4
+    otherViewVolume: 0.15
+    offScreenVolume: 0.45
+    mainMenuMusic: {fileID: 8300000, guid: 38de567ccada74813834f4cacd0ac8c5, type: 3}
+    colonyPlaylist:
+    - {fileID: 8300000, guid: 9d1665c7642a1f1e299d744bb134e0f7, type: 3}
+    - {fileID: 8300000, guid: a8db990bd4ad61cd497031656d0880b5, type: 3}
+    - {fileID: 8300000, guid: 0d310062fe16eac4980ef4286eece5d9, type: 3}
+    - {fileID: 8300000, guid: e00d6ebb48f78748aaa88c97bc25a821, type: 3}
+    - {fileID: 8300000, guid: 436916f930e52a8d7a00005e64a0c55a, type: 3}
+    - {fileID: 8300000, guid: fe8ff16396ae78cf6acc36916bbf82c5, type: 3}
+    - {fileID: 8300000, guid: c58a935903cce265fae3d21573a83ca4, type: 3}
+    - {fileID: 8300000, guid: b70b0e21b51bf8233ab2d6a0bea89ac5, type: 3}
+    - {fileID: 8300000, guid: d6a8ddb442fe79406ace4c767ecca277, type: 3}
+    shufflePlaylist: 1
+    playsPerTrack: 2
+    crossfadeSeconds: 1
+    waveWarning: {fileID: 8300000, guid: 890e3d2f53f7da587b4950c4c655fa7a, type: 3}
+    waveWarningLead: 5
+    battleMusic:
+    - {fileID: 8300000, guid: 126b51ac18c2fa42f86ad644b1f94b99, type: 3}
+    - {fileID: 8300000, guid: e7ba93fe3ee4adf8a88ef26f3af85b93, type: 3}
+    waveCleared: {fileID: 8300000, guid: 2b6977ef9d661e3a4b7f39a8abde2e7b, type: 3}
+    queenInDanger: {fileID: 8300000, guid: 2ff3265f9285d1d59aa26284ae19908e, type: 3}
+    queenDangerBelow: 0.35
+    queenSafeAbove: 0.55
+    gameOver: {fileID: 8300000, guid: 6beb07c01037b1bb9a37712c00c25366, type: 3}
+    uiClick:
+      clips:
+      - {fileID: 8300000, guid: fd26978e2ec5f6d3093fa523e6d236ea, type: 3}
+      volume: 0.6
+      pitchVariation: 0.03
+      cooldown: 0.03
+    uiHover:
+      clips:
+      - {fileID: 8300000, guid: 48b8c9dff056c8c4cb58da55709c9980, type: 3}
+      volume: 0.3
+      pitchVariation: 0.05
+      cooldown: 0.06
+    uiConfirm:
+      clips:
+      - {fileID: 8300000, guid: 7edcf2d8ce810eac394b3cf2894ec789, type: 3}
+      volume: 0.6
+      pitchVariation: 0.03
+      cooldown: 0.05
+    uiError:
+      clips:
+      - {fileID: 8300000, guid: 5824fcb68601221a3b9417391e7265ce, type: 3}
+      volume: 0.6
+      pitchVariation: 0
+      cooldown: 0.2
+    digSelect:
+      clips:
+      - {fileID: 8300000, guid: 8c3b0cd543d8cf49e8833093f2ddf329, type: 3}
+      volume: 0.55
+      pitchVariation: 0.05
+      cooldown: 0.05
+    dig:
+      clips:
+      - {fileID: 8300000, guid: 352693acd03ccdab09b5b3a9d5b3186f, type: 3}
+      - {fileID: 8300000, guid: 424fba7f775833baa9ca49be6a930341, type: 3}
+      - {fileID: 8300000, guid: 0d5e29cb807ddbb899c4505c650ad605, type: 3}
+      volume: 0.35
+      pitchVariation: 0.12
+      cooldown: 0.09
+    tunnelComplete:
+      clips:
+      - {fileID: 8300000, guid: 6e8685ee2d0754efd8af8e848cd3b45c, type: 3}
+      volume: 0.45
+      pitchVariation: 0.05
+      cooldown: 0.25
+    stoneFound:
+      clips:
+      - {fileID: 8300000, guid: 47ac34afe497858e9afcc486e2f7c89b, type: 3}
+      volume: 0.6
+      pitchVariation: 0.08
+      cooldown: 0.15
+    treasureFound:
+      clips:
+      - {fileID: 8300000, guid: f8103a53fb6f789d497deef002a519a8, type: 3}
+      volume: 0.7
+      pitchVariation: 0
+      cooldown: 0.3
+    roomBuilt:
+      clips:
+      - {fileID: 8300000, guid: cf2637932741b97349b81c75383dd483, type: 3}
+      volume: 0.7
+      pitchVariation: 0.03
+      cooldown: 0.2
+    eggLaid:
+      clips:
+      - {fileID: 8300000, guid: 8fc2a90cf5d2b4c759f09f77498c773c, type: 3}
+      volume: 0.5
+      pitchVariation: 0.05
+      cooldown: 0.2
+    antHatched:
+      clips:
+      - {fileID: 8300000, guid: 702ca6300b6af7f79af6f033c7124df7, type: 3}
+      volume: 0.6
+      pitchVariation: 0.05
+      cooldown: 0.2
+    foodStored:
+      clips:
+      - {fileID: 8300000, guid: 25b224170c47bc7e79c2fd2fd0b92e0a, type: 3}
+      volume: 0.35
+      pitchVariation: 0.08
+      cooldown: 0.12
+    leavesStored:
+      clips:
+      - {fileID: 8300000, guid: ee1cb92d73f2f97f6b315a84e114be53, type: 3}
+      volume: 0.35
+      pitchVariation: 0.08
+      cooldown: 0.12
+    wallBuilt:
+      clips:
+      - {fileID: 8300000, guid: 188429e6db1d542ce95711d5f7e8989c, type: 3}
+      volume: 0.6
+      pitchVariation: 0.06
+      cooldown: 0.08
+    towerBuilt:
+      clips:
+      - {fileID: 8300000, guid: b33a04111081bce318cf47709dcd361c, type: 3}
+      volume: 0.7
+      pitchVariation: 0
+      cooldown: 0.2
+    structureDestroyed:
+      clips:
+      - {fileID: 8300000, guid: 5b6ee25d107e343bc9791731ff40b2cc, type: 3}
+      volume: 0.7
+      pitchVariation: 0.06
+      cooldown: 0.1
+    towerFire:
+      clips:
+      - {fileID: 8300000, guid: 03ba62f37f0ba8549964d2cd8702d24e, type: 3}
+      volume: 0.35
+      pitchVariation: 0.1
+      cooldown: 0.08
+    soldierBite:
+      clips:
+      - {fileID: 8300000, guid: 83361dbb480e1f640957cfe44f5d83d6, type: 3}
+      volume: 0.4
+      pitchVariation: 0.12
+      cooldown: 0.07
+    enemyHit:
+      clips:
+      - {fileID: 8300000, guid: 779685f04fee861dbad1ce5774efd9db, type: 3}
+      volume: 0.4
+      pitchVariation: 0.12
+      cooldown: 0.07
+    enemyDeath:
+      clips:
+      - {fileID: 8300000, guid: ee37afb7e0eea9e108e0211f46f604cc, type: 3}
+      volume: 0.6
+      pitchVariation: 0.08
+      cooldown: 0.08
+    enemyDeathHeavy:
+      clips:
+      - {fileID: 8300000, guid: 1001d8460086eadabb11dacc50c79530, type: 3}
+      volume: 0.7
+      pitchVariation: 0.05
+      cooldown: 0.1
+    antDied:
+      clips: []
+      volume: 0.5
+      pitchVariation: 0.08
+      cooldown: 0.1
+    queenDamage:
+      clips:
+      - {fileID: 8300000, guid: 9f9b0cbb7dd17ea2397a8a5c26cb2f44, type: 3}
+      volume: 0.6
+      pitchVariation: 0.05
+      cooldown: 0.6
+    queenAlarm:
+      clips:
+      - {fileID: 8300000, guid: 4f23b8a935d9c557787289e2c983f187, type: 3}
+      volume: 0.7
+      pitchVariation: 0
+      cooldown: 3
+    waveStarted:
+      clips:
+      - {fileID: 8300000, guid: 48d9317a7d5b7c14c8a9ee83b278ea83, type: 3}
+      volume: 0.6
+      pitchVariation: 0
+      cooldown: 1
+--- !u!4 &1819170229
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1819170227}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 379882235}
+  - {fileID: 1106839306}
+  - {fileID: 1819170229}

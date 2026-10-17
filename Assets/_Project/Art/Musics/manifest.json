@@ -1,0 +1,98 @@
+{
+  "original_source": "Composed using synthesizers and simple procedural synthesis; no third-party samples",
+  "sample_rate_hz": 32000,
+  "colony_playlist": [
+    {
+      "file": "Music/Colony_Playlist/01_autumn_colony_loop.ogg",
+      "duration_sec": 38.4,
+      "bpm": 100,
+      "loopable": true,
+      "original_v1": true
+    },
+    {
+      "file": "Music/Colony_Playlist/02_underground_colony_loop.ogg",
+      "duration_sec": 43.636,
+      "bpm": 88,
+      "loopable": true,
+      "original_v1": true
+    },
+    {
+      "file": "Music/Colony_Playlist/03_larvae_nursery_loop.ogg",
+      "duration_sec": 24.0,
+      "bpm": 80,
+      "loopable": true,
+      "original_v1": true
+    },
+    {
+      "file": "Music/Colony_Playlist/09_acorn_storehouse_loop.ogg",
+      "duration_sec": 30.0,
+      "bpm": 96,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Acorn Storehouse"
+    },
+    {
+      "file": "Music/Colony_Playlist/10_root_tunnels_loop.ogg",
+      "duration_sec": 32.0,
+      "bpm": 90,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Root Tunnels"
+    },
+    {
+      "file": "Music/Colony_Playlist/11_fallen_leaves_loop.ogg",
+      "duration_sec": 34.286,
+      "bpm": 84,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Fallen Leaves"
+    },
+    {
+      "file": "Music/Colony_Playlist/12_foragers_march_loop.ogg",
+      "duration_sec": 27.692,
+      "bpm": 104,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Foragers March"
+    },
+    {
+      "file": "Music/Colony_Playlist/13_fungus_gardens_loop.ogg",
+      "duration_sec": 35.122,
+      "bpm": 82,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Fungus Gardens"
+    },
+    {
+      "file": "Music/Colony_Playlist/14_queen_and_cradles_loop.ogg",
+      "duration_sec": 36.923,
+      "bpm": 78,
+      "loopable": true,
+      "original_v1": false,
+      "title": "Queen and Cradles"
+    }
+  ],
+  "battle": [
+    {
+      "file": "Music/Waves_And_Events/05_enemy_wave_loop.ogg",
+      "bpm": 144
+    },
+    {
+      "file": "Music/Waves_And_Events/15_beetle_raid_alternate_loop.ogg",
+      "bpm": 152,
+      "duration_sec": 18.947
+    }
+  ],
+  "event_music": [
+    "04_wave_warning_exact_5s.wav",
+    "06_wave_victory_jingle.ogg",
+    "07_queen_in_danger_loop.ogg",
+    "08_colony_game_over.ogg"
+  ],
+  "sfx_count": 28,
+  "main_menu": {
+    "file": "Music/Main_Menu/16_autumn_ant_colony_title_loop.ogg",
+    "bpm": 88,
+    "duration_sec": 32.727
+  }
+}
