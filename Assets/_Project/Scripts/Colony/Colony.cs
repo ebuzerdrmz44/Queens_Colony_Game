@@ -587,6 +587,8 @@ namespace AntColony
             UnitAnimator idle = UnitAnimator.Attach(queen, body, BodyView.Side, frames);
             if (!queen.TryGetComponent(out this.queen)) this.queen = queen.gameObject.AddComponent<Queen>();
             this.queen.Init(game, this, idle);
+            // Her own frame-by-frame art (idle, walk, laying, wing flaps), if the prefab has it.
+            if (queen.TryGetComponent(out QueenAnimator queenFrames)) queenFrames.Init(body, this.queen);
             if (!tuned)
             {
                 idle.idleFps = 3f;

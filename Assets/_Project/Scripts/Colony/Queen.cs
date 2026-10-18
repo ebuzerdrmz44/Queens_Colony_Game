@@ -27,18 +27,20 @@ namespace AntColony
         /// </summary>
         static readonly (int taller, int wider, int shift, float tilt)[] BirthFrames =
         {
+            // The laying frames (QueenAnimator) show the abdomen settling, squeezing and the egg; this adds the
+            // tilt (head up, abdomen down) and a one-pixel shake while she strains.
             (0, 0, 0, 0f),    // arrive
             (0, 0, 0, 0f),    // turn around (see TurnFrame)
-            (-1, 1, 0, 6f),   // squat down
-            (-2, 1, 0, 12f),
-            (-2, 2, 0, 12f),
-            (-2, 2, 1, 12f),  // strain
-            (-2, 2, -1, 12f),
-            (-2, 2, 1, 12f),
-            (-2, 2, -1, 12f),
-            (-3, 3, 0, 16f),  // push
-            (1, -1, 0, 8f),   // pop: the egg drops out
-            (0, 0, 0, 4f),    // stand up
+            (0, 0, 0, 4f),    // squat down
+            (0, 0, 0, 8f),
+            (0, 0, 0, 8f),
+            (0, 0, 1, 8f),    // strain
+            (0, 0, -1, 8f),
+            (0, 0, 1, 8f),
+            (0, 0, -1, 8f),
+            (0, 0, 0, 10f),   // push
+            (0, 0, 0, 6f),    // pop: the egg drops out
+            (0, 0, 0, 3f),    // stand up
             (0, 0, 0, 0f),
         };
         const int TurnFrame = 1;
@@ -61,6 +63,8 @@ namespace AntColony
         /// <summary>She has an egg that isn't in a cradle yet (saving puts it back in the raise queue).</summary>
         public bool IsCarryingEgg => state == State.ToCradle || (state == State.Birthing && birthFrame < PopFrame);
         public AntRole CarriedCaste => caste;
+        /// <summary>The frame of the birthing pose she is in, or -1 when she isn't laying (for <see cref="QueenAnimator"/>).</summary>
+        public int BirthFrame => state == State.Birthing ? Mathf.Max(0, birthFrame) : -1;
 
         public void Init(ColonyGame colonyGame, Colony owner, UnitAnimator body)
         {

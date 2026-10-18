@@ -26,8 +26,8 @@ Transform:
   m_GameObject: {fileID: 2232754050616106311}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.8125, z: 0}
-  m_LocalScale: {x: 2.6, y: 2.6, z: 1}
+  m_LocalPosition: {x: 0, y: 0.6875, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8256368172666242625}
@@ -81,7 +81,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 5
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -8122657250524183459, guid: 8a8c9a2ffaa25b41b842d8be6903e4fd, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0730b89b9e2b454391c76104207a6ea2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -101,6 +101,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8256368172666242625}
   - component: {fileID: -840400897836621463}
+  - component: {fileID: 7311552904516625001}
   m_Layer: 0
   m_Name: Queen
   m_TagString: Untagged
@@ -137,7 +138,57 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AntColony.UnitAnimator
   idleFps: 6
-  breathPixels: 00000000000000000100000001000000
+  breathPixels: 00000000
   fidgetEvery: 3
   lookFrames: 4
   idleDelay: 0.25
+--- !u!114 &7311552904516625001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5064099301339140523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74bba138f65341648385e45dd6914a3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AntColony.QueenAnimator
+  idle:
+  - wingsRest: {fileID: 21300000, guid: 0730b89b9e2b454391c76104207a6ea2, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 8815bcf75c4e4283a3f12d98d514cf15, type: 3}
+    wingsUp: {fileID: 21300000, guid: 67939c34433c476d8fb98e7699f38363, type: 3}
+  - wingsRest: {fileID: 21300000, guid: 569f0673b3444aa6b7d3f0e069605fca, type: 3}
+    wingsHalf: {fileID: 21300000, guid: d7c6e02748d04ddf9793c0da98286e69, type: 3}
+    wingsUp: {fileID: 21300000, guid: 6e3501f8b80246498f3b95fc088ca887, type: 3}
+  walk:
+  - wingsRest: {fileID: 21300000, guid: b3b40f261fe9406b923936e09e54ec59, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 8eafec8f335a48719756419197ceae5d, type: 3}
+    wingsUp: {fileID: 21300000, guid: 456449f2b04941b6bbc3d0fca8a9a671, type: 3}
+  - wingsRest: {fileID: 21300000, guid: 498fe96621f04ec0873f04af31d4b03b, type: 3}
+    wingsHalf: {fileID: 21300000, guid: b56d3c9601544ff2b08a55ca5adf99a4, type: 3}
+    wingsUp: {fileID: 21300000, guid: ae97e61f4a8d4f81b2e631e159dfeb72, type: 3}
+  - wingsRest: {fileID: 21300000, guid: 5fbf9b545ef44cb5b3b45ac7c33fb178, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 7527587a3d5a4d6380cb6ffefe3f1e4e, type: 3}
+    wingsUp: {fileID: 21300000, guid: cb6f67662c6e431cbb4d8738678fc947, type: 3}
+  - wingsRest: {fileID: 21300000, guid: b0353c00d3164666812797fc23df87e6, type: 3}
+    wingsHalf: {fileID: 21300000, guid: c27593edda1b470fa0b16ee49ac78f20, type: 3}
+    wingsUp: {fileID: 21300000, guid: 0b7b6dfe060b4082bf06c195b22d2c07, type: 3}
+  lay:
+  - wingsRest: {fileID: 21300000, guid: 500d9e93d29b4117bc9156c0d258ecb8, type: 3}
+    wingsHalf: {fileID: 21300000, guid: da399bcf6d8047dd8a23ddadce529b85, type: 3}
+    wingsUp: {fileID: 21300000, guid: f6f61462102f4e1db1ffcbf175e9000d, type: 3}
+  - wingsRest: {fileID: 21300000, guid: 5100320eeb214713b15a0c666ca08ecc, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 8bc72b4408634785a8e115fffbc7bde2, type: 3}
+    wingsUp: {fileID: 21300000, guid: 949003faf1dd4eedb66ac3f234f9cd27, type: 3}
+  - wingsRest: {fileID: 21300000, guid: 9b3dfab22e6c416f94cf5bb3c13dea63, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 66e2830821a34dceaee6bf67ce24a936, type: 3}
+    wingsUp: {fileID: 21300000, guid: 37280e574cd04c1d914658d6c434e816, type: 3}
+  - wingsRest: {fileID: 21300000, guid: dd0b455197314ca0b1a59fb1d4867571, type: 3}
+    wingsHalf: {fileID: 21300000, guid: 3e76b9d3802a468e8c4250240e0adc28, type: 3}
+    wingsUp: {fileID: 21300000, guid: c71ac9243df14f09aa671df83501c5dd, type: 3}
+  idleFps: 2
+  walkFramesPerUnit: 7
+  flapEveryMin: 3
+  flapEveryMax: 4
+  flapFps: 12
