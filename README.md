@@ -1,4 +1,4 @@
-# Autumn Ant Colony
+# Queen's Colony
 
 A pixel-art colony defence game made in Unity for the CClub Game Hackathon '26.
 Run an ant colony through the fall: gather food, dig the nest, raise ants, and protect the queen through 10 waves of bugs
