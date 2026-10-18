@@ -664,6 +664,87 @@ namespace AntColony
             "kkkkk...........",
         });
 
+        /// <summary>The rally flag waving: the pole stays put while a wave rolls out along the cloth.</summary>
+        public static Sprite[] RallyFlagWaving() => Frames("Rally Flag Waving", new[]
+        {
+            new[]
+            {
+                ".kk.............",
+                "kyyk..kkk.......",
+                ".kkkkkrrkkk.....",
+                ".kbkrrrrrrkkkkk.",
+                ".kbkroorrrrrkrk.",
+                ".kbkrorrrrrrrkk.",
+                ".kbkrrrrrrrrrk..",
+                ".kbkrrrrrrrrkkk.",
+                ".kbkkkkkrrrrrrk.",
+                ".kbk....kkrrrkk.",
+                ".kbk......kkkk..",
+                ".kbk............",
+                ".kbk............",
+                ".kbk............",
+                "kdbd............",
+                "kkkk............",
+            },
+            new[]
+            {
+                ".kk.............",
+                "kyyk....kkkk....",
+                ".kkkkkkkrrrkk...",
+                ".kbkrrrrrrrrk...",
+                ".kbkrorrrrrrkkk.",
+                ".kbkroorrrrrrrk.",
+                ".kbkrrrrrrrrrkk.",
+                ".kbkrrrrrrrrkk..",
+                ".kbkkkrrkkkrrkk.",
+                ".kbk..kkk..krrk.",
+                ".kbk........kkk.",
+                ".kbk............",
+                ".kbk............",
+                ".kbk............",
+                "kdbd............",
+                "kkkk............",
+            },
+            new[]
+            {
+                ".kk.............",
+                "kyyk......kkk...",
+                ".kkkkkk.kkrrkk..",
+                ".kbkrrkkrrrrrkk.",
+                ".kbkrorrrrrrrrk.",
+                ".kbkrorrrrrrkkk.",
+                ".kbkrrorrrrrrk..",
+                ".kbkrrrrrrrrrkk.",
+                ".kbkkkrrrrkkkrk.",
+                ".kbk.krrkkk..kk.",
+                ".kbk..kkk.......",
+                ".kbk............",
+                ".kbk............",
+                ".kbk............",
+                "kdbd............",
+                "kkkk............",
+            },
+            new[]
+            {
+                ".kk.............",
+                "kyyk............",
+                ".kkkkkkkk..kkkk.",
+                ".kbkrrrrkkkrrrk.",
+                ".kbkrorrrrrrrkk.",
+                ".kbkroorrrrrkk..",
+                ".kbkrrrrrrrrrkk.",
+                ".kbkrrrrrrrrrrk.",
+                ".kbkkkrrrrrrkkk.",
+                ".kbk..kkrrrkk...",
+                ".kbk....kkkk....",
+                ".kbk............",
+                ".kbk............",
+                ".kbk............",
+                "kdbd............",
+                "kkkk............",
+            },
+        });
+
         // ---------- Nest furniture (side view, one 16x16 cell per nest tile) ----------
 
         /// <summary>A grub, two frames so it can squirm.</summary>

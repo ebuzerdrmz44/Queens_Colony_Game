@@ -100,6 +100,7 @@ namespace AntColony
         public Sprite RangeCircle { get; } = PixelSprites.RangeCircle();
         public Sprite FallingLeaf { get; } = PixelSprites.FallingLeaf();
         public Sprite RallyFlag { get; } = PixelSprites.RallyFlag();
+        public Sprite[] RallyFlagWaving { get; } = PixelSprites.RallyFlagWaving();
         public Sprite SelectionRing { get; } = PixelSprites.SelectionRing();
         public Sprite Wall { get; } = PixelSprites.WallBlock();
         public Sprite Tower { get; } = PixelSprites.Tower();

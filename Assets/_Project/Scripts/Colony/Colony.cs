@@ -625,6 +625,7 @@ namespace AntColony
             rallyFlag.SetParent(game.SurfaceRoot, false);
             flag.transform.SetParent(rallyFlag, false);
             flag.transform.localPosition = new Vector3(0f, GameArt.PivotHeight(flag), 0f);
+            flag.gameObject.AddComponent<SpriteLoop>().Init(game.Art.RallyFlagWaving, 6f);
         }
     }
 }
