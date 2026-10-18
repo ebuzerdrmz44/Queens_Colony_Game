@@ -198,14 +198,14 @@ namespace AntColony
             nest.Fill(plan.Fill);
 
             var parts = new List<string>();
-            if (plan.Rooms.Count > 0) parts.Add($"Removed {plan.Rooms.Count} room{(plan.Rooms.Count == 1 ? "" : "s")} (+{refund} food)");
-            if (plan.Fill.Count > 0) parts.Add($"filled {plan.Fill.Count} tunnel tile{(plan.Fill.Count == 1 ? "" : "s")}");
-            if (plan.DigMarks.Count > 0) parts.Add($"cancelled {plan.DigMarks.Count} dig mark{(plan.DigMarks.Count == 1 ? "" : "s")}");
+            if (plan.Rooms.Count > 0) parts.Add(Loc.F(plan.Rooms.Count == 1 ? "Removed {0} room (+{1} food)" : "Removed {0} rooms (+{1} food)", plan.Rooms.Count, refund));
+            if (plan.Fill.Count > 0) parts.Add(Loc.F(plan.Fill.Count == 1 ? "filled {0} tunnel tile" : "filled {0} tunnel tiles", plan.Fill.Count));
+            if (plan.DigMarks.Count > 0) parts.Add(Loc.F(plan.DigMarks.Count == 1 ? "cancelled {0} dig mark" : "cancelled {0} dig marks", plan.DigMarks.Count));
 
             string result = parts.Count > 0 ? string.Join(", ", parts) + "." : "";
             if (plan.KeptOpen.Count > 0)
-                result += " Grey tunnels stay open: they're the only way to reach a room. Include that room in the box to remove both.";
-            if (plan.CradlesWithBrood > 0) result += " Cradles with an egg or larva are kept.";
+                result += " " + Loc.T("Grey tunnels stay open: they're the only way to reach a room. Include that room in the box to remove both.");
+            if (plan.CradlesWithBrood > 0) result += " " + Loc.T("Cradles with an egg or larva are kept.");
             if (result.Length == 0) result = "Nothing to remove there. Drag over rooms, tunnels or dig marks.";
 
             string message = result.Trim();
@@ -228,7 +228,7 @@ namespace AntColony
 
             if (!fits)
             {
-                game.ShowMessage($"A {RoomInfo.Of(type).Name} needs {size.x}x{size.y} dug-out tiles with nothing on them.");
+                game.ShowMessage(Loc.F("A {0} needs {1}x{2} dug-out tiles with nothing on them.", Loc.T(RoomInfo.Of(type).Name), size.x, size.y));
                 game.Audio.Play(Sound.UiError);
                 return;
             }
@@ -305,14 +305,14 @@ namespace AntColony
                 return;
             }
             var parts = new List<string>();
-            if (Tool == NestTool.Dig) parts.Add(toDig > 0 ? $"{toDig} tiles to dig" : "no soil to dig here");
+            if (Tool == NestTool.Dig) parts.Add(toDig > 0 ? Loc.F("{0} tiles to dig", toDig) : Loc.T("no soil to dig here"));
             else
             {
-                if (plan.Rooms.Count > 0) parts.Add($"{plan.Rooms.Count} room{(plan.Rooms.Count == 1 ? "" : "s")}");
-                if (plan.Fill.Count > 0) parts.Add($"{plan.Fill.Count} tiles to fill");
-                if (plan.DigMarks.Count > 0) parts.Add($"{plan.DigMarks.Count} dig marks");
-                if (plan.KeptOpen.Count > 0) parts.Add($"{plan.KeptOpen.Count} kept open (path to a room)");
-                if (parts.Count == 0) parts.Add("nothing to remove here");
+                if (plan.Rooms.Count > 0) parts.Add(Loc.F(plan.Rooms.Count == 1 ? "{0} room" : "{0} rooms", plan.Rooms.Count));
+                if (plan.Fill.Count > 0) parts.Add(Loc.F("{0} tiles to fill", plan.Fill.Count));
+                if (plan.DigMarks.Count > 0) parts.Add(Loc.F("{0} dig marks", plan.DigMarks.Count));
+                if (plan.KeptOpen.Count > 0) parts.Add(Loc.F("{0} kept open (path to a room)", plan.KeptOpen.Count));
+                if (parts.Count == 0) parts.Add(Loc.T("nothing to remove here"));
             }
             PreviewSummary = string.Join(", ", parts);
         }

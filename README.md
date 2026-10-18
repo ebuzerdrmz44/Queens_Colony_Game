@@ -58,6 +58,10 @@ player that can be moved by dragging its title bar. It contains the current trac
 toggle. On wider screens, existing worker/soldier/builder/spitter artwork with music-only headphones appears beside the playlist, crossfading when the playing or selected track changes. Picking a track keeps the player open. Long lists can be scrolled or navigated with the
 up/down buttons. Close it with X or Esc. The player is also available while paused.
 
+### Language
+
+The game is in **English** and **Turkish (Türkçe)**. Switch it in **Settings** (main menu or pause menu). The choice is remembered; the first launch follows the computer's language.
+
 ### Saving and settings
 
 - **Settings** is available from the title and pause menus. It contains sound controls and
@@ -95,6 +99,9 @@ right-click to move or attack, E selects all soldiers, Q halves the group.
 - Game code: `Assets/_Project/Scripts`, art in `Assets/_Project/Art`, prefabs in `Assets/_Project/Prefabs`.
 - Most tuning (costs, speeds, waves, the boss, audio, UI images, effect prefabs) lives on the **Colony Game** object in
   the scene's Inspector. More details are in `Assets/_Project/README.md`.
+- Translations are in `Assets/_Project/Scripts/Core/Localization.Turkish.cs`, keyed by the exact English text. Plain texts
+  are translated automatically when drawn; texts with numbers use `Loc.F("Wave {0} is coming!", wave)`. When you add or
+  change an English text, add/update its Turkish line too (missing ones just stay in English).
 - In the editor, **F8** during Play sets up a test of the final boss wave (and saves it, so F9 replays it).
 
 Music portrait variants live in `Assets/_Project/Art/UI/MusicPortraits`. Each UI Skin portrait has

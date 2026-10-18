@@ -127,8 +127,7 @@ namespace AntColony
             int count = game.Settings.enemiesInFirstWave + (CurrentWave - 1) * game.Settings.extraEnemiesPerWave;
             StartCoroutine(SpawnWave(CurrentWave, Mathf.Max(1, count)));
 
-            string finalNote = HasMoreWaves ? "" : " It's the final wave!";
-            game.ShowMessage($"Wave {CurrentWave} is coming!{finalNote}");
+            game.ShowMessage(Loc.F(HasMoreWaves ? "Wave {0} is coming!" : "Wave {0} is coming! It's the final wave!", CurrentWave));
             if (!HasMoreWaves) StartCoroutine(BossArrives());
         }
 
@@ -157,7 +156,7 @@ namespace AntColony
             EnemyStats stats = game.Settings.boss;
             Boss = SpawnEnemyAt(stats, healthMultiplier, point, waveNumber, recordSpawn);
             game.PlayEffect(EffectKind.BossArrived, point);
-            game.ShowMessage($"The {stats.name} is coming! Defend the queen!");
+            game.ShowMessage(Loc.F("The {0} is coming! Defend the queen!", Loc.T(stats.name)));
             return Boss;
         }
 

@@ -200,7 +200,7 @@ namespace AntColony
             if (IsBoss)
             {
                 game.PlayEffect(EffectKind.BossDied, Position);
-                game.ShowMessage($"The {stats.name} is defeated!");
+                game.ShowMessage(Loc.F("The {0} is defeated!", Loc.T(stats.name)));
             }
             game.PlayEffect(EffectKind.EnemyDied, Position);
             game.Audio.Play(stats.kind == EnemyKind.Spider ? Sound.EnemyDeath : Sound.EnemyDeathHeavy, Position);

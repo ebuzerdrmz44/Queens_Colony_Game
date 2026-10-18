@@ -1,4 +1,4 @@
-# Autumn Ant Colony
+# Queen's Colony
 
 ## Run it
 1. In Unity: menu **Ant Colony → Create Game Scene** (only once; it creates `Assets/_Project/Scenes/AntColony.unity`).

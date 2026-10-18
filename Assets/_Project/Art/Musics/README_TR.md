@@ -1,4 +1,4 @@
-# AUTUMN ANT COLONY — Soundtrack V2 (KODTU)
+# QUEEN'S COLONY — Soundtrack V2 (KODTU)
 
 Bu paket, oyunun ekran görüntülerindeki **sonbahar / pixel art / karınca kolonisi / dalga savunması** yapısına göre hazırlanmış özgün procedural chiptune soundtrack'tir. Üçüncü taraf müzik/ses sample'ı içermez. Unity ile kullanılabilir. Oyun normalde sürekli aktif olduğu için ayrı bir ambience klasörü veya sürekli rüzgar/mağara uğultusu **yoktur**.
 

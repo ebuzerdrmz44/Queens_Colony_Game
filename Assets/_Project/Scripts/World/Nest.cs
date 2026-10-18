@@ -405,7 +405,7 @@ namespace AntColony
             {
                 colony.AddStone(stone);
                 game.PlayEffect(EffectKind.StoneFound, where);
-                game.Hud.FloatText(where, $"+{stone} stone", GameHud.StoneColor);
+                game.Hud.FloatText(where, Loc.F("+{0} stone", stone), GameHud.StoneColor);
             }
 
             BuriedLoot loot = buried[tile.x, tile.y];
@@ -417,9 +417,9 @@ namespace AntColony
                 : settings.grubFood;
             int stored = colony.AddFood(amount, foraged: false);
             string what = loot == BuriedLoot.SeedCache ? "a seed cache" : "a fat grub";
-            game.ShowMessage(stored < amount ? $"Found {what}! +{stored} food (storage full)" : $"Found {what}! +{stored} food");
+            game.ShowMessage(Loc.F(stored < amount ? "Found {0}! +{1} food (storage full)" : "Found {0}! +{1} food", Loc.T(what), stored));
             game.PlayEffect(EffectKind.TreasureFound, where);
-            if (stored > 0) game.Hud.FloatText(where + Vector2.up * 0.4f, $"+{stored} food", GameHud.FoodColor);
+            if (stored > 0) game.Hud.FloatText(where + Vector2.up * 0.4f, Loc.F("+{0} food", stored), GameHud.FoodColor);
         }
 
         public BuriedLoot LootAt(Vector2Int tile) => buried[tile.x, tile.y];

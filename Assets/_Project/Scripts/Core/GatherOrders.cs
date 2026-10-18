@@ -191,9 +191,9 @@ namespace AntColony
             int count = MarkedCount;
             int gatherers = game.Colony.CountOnMission(Mission.Forage, AntRole.Worker) + game.Colony.CountOnMission(Mission.Leaves, AntRole.Worker);
             if (count == 0) game.ShowMessage("No food marked: gatherers stay in the nest.");
-            else if (gatherers == 0) game.ShowMessage($"{count} pile{(count == 1 ? "" : "s")} marked. Put workers on Food gatherers or Leaf cutters (M).");
-            else if (game.Colony.IsStorageFull) game.ShowMessage($"{count} pile{(count == 1 ? "" : "s")} marked, but storage is full: build a Storage room.");
-            else game.ShowMessage($"{count} pile{(count == 1 ? "" : "s")} marked for gathering.");
+            else if (gatherers == 0) game.ShowMessage(Loc.F(count == 1 ? "{0} pile marked. Put workers on Food gatherers or Leaf cutters (M)." : "{0} piles marked. Put workers on Food gatherers or Leaf cutters (M).", count));
+            else if (game.Colony.IsStorageFull) game.ShowMessage(Loc.F(count == 1 ? "{0} pile marked, but storage is full: build a Storage room." : "{0} piles marked, but storage is full: build a Storage room.", count));
+            else game.ShowMessage(Loc.F(count == 1 ? "{0} pile marked for gathering." : "{0} piles marked for gathering.", count));
         }
     }
 }

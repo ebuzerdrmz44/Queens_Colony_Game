@@ -169,7 +169,7 @@ namespace AntColony
                 if (Waves.CurrentWave > lastCompletedWave && !Waves.IsWaveActive)
                 {
                     lastCompletedWave = Waves.CurrentWave;
-                    if (AutoSaveAfterWave && SaveGame()) ShowMessage($"Wave {lastCompletedWave} cleared. Autosaved.");
+                    if (AutoSaveAfterWave && SaveGame()) ShowMessage(Loc.F("Wave {0} cleared. Autosaved.", lastCompletedWave));
                 }
                 if (Waves.AllWavesDefeated) EndGame(GameState.Won);
             }
@@ -364,7 +364,7 @@ namespace AntColony
             if (data.worldSeed != settings.worldSeed)
             {
                 // The rock and scenery come from the seed, so the save only fits the world it was made in.
-                ShowMessage($"That save was made with world seed {data.worldSeed}; this world uses {settings.worldSeed}.");
+                ShowMessage(Loc.F("That save was made with world seed {0}; this world uses {1}.", data.worldSeed, settings.worldSeed));
                 return false;
             }
 
@@ -384,7 +384,7 @@ namespace AntColony
 
             InMainMenu = false;
             Tutorial.Read(data);
-            ShowMessage($"Loaded the game saved {data.savedAt}.");
+            ShowMessage(Loc.F("Loaded the game saved {0}.", data.savedAt));
             return true;
         }
 

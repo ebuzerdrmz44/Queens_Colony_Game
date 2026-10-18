@@ -47,8 +47,9 @@ namespace AntColony
                     case JobKind.Room: return "building a room";
                     case JobKind.Structure:
                         if (structure == null) return "building";
-                        string thing = structure.Kind == StructureKind.Wall ? "a wall" : "a tower";
-                        return structure.IsBuilt ? $"repairing {thing}" : $"building {thing}";
+                        bool wall = structure.Kind == StructureKind.Wall;
+                        if (structure.IsBuilt) return wall ? "repairing a wall" : "repairing a tower";
+                        return wall ? "building a wall" : "building a tower";
                     default: return "waiting for work";
                 }
             }

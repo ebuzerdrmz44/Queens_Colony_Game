@@ -576,9 +576,9 @@ namespace AntColony
 
             // Food, and whether it is going up or down.
             Icon(new Vector2(x + 9f, y + row * 0.5f), SkinIcon(skin?.iconFood, art.Berry), maxSize: 20f);
-            Text(new Rect(textX, y, 160f, row), $"Food {colony.Food}", Cream, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(textX, y, 160f, row), Loc.F("Food {0}", colony.Food), Cream, medium, TextAnchor.MiddleLeft);
             float net = colony.Stats.NetPerMinute;
-            string rate = $"{net:+0;-0;0}/min";
+            string rate = Loc.F("{0:+0;-0;0}/min", net);
             Text(new Rect(x, y, right - x, row), rate, net >= 0f ? Good : Bad, small, TextAnchor.MiddleRight);
             if (skin != null && skin.iconRate != null)
                 Icon(new Vector2(right - font.Measure(rate, small) - 11f, y + row * 0.5f), skin.iconRate, maxSize: 14f);
@@ -586,12 +586,12 @@ namespace AntColony
 
             Icon(new Vector2(x + 9f, y + row * 0.5f), SkinIcon(skin?.iconLeaves, art.Leaf), maxSize: 20f);
             Text(new Rect(textX, y, 120f, row), "Leaves", Cream, medium, TextAnchor.MiddleLeft);
-            Text(new Rect(textX + font.Measure("Leaves ", medium), y, 60f, row), colony.Leaves.ToString(), LeafOrange, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(textX + font.Measure(Loc.T("Leaves") + " ", medium), y, 60f, row), colony.Leaves.ToString(), LeafOrange, medium, TextAnchor.MiddleLeft);
             Text(new Rect(x, y, right - x, row), "-> garden", Muted, small, TextAnchor.MiddleRight);
             y += row;
 
             Icon(new Vector2(x + 9f, y + row * 0.5f), SkinIcon(skin?.iconStone, art.Pebble), maxSize: 20f);
-            Text(new Rect(textX, y, 160f, row), $"Stone {colony.Stone}", Cream, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(textX, y, 160f, row), Loc.F("Stone {0}", colony.Stone), Cream, medium, TextAnchor.MiddleLeft);
             Text(new Rect(x, y, right - x, row), "dig for more", Muted, small, TextAnchor.MiddleRight);
             y += row;
 
@@ -607,7 +607,7 @@ namespace AntColony
                 labelX = x + 22f;
             }
             Color storageColor = colony.FreeSpace < capacity * 0.1f ? Bad : Cream;
-            Text(new Rect(labelX, y, right - labelX, 18f), $"Capacity: {stored}/{capacity}", storageColor, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(labelX, y, right - labelX, 18f), Loc.F("Capacity: {0}/{1}", stored, capacity), storageColor, medium, TextAnchor.MiddleLeft);
             y += 20f;
             GoldBar(new Rect(x, y, right - x, 10f), stored / (float)capacity, missingColor: null);
             y += 18f;
@@ -632,7 +632,7 @@ namespace AntColony
             }
             Sprite eggIcon = anyLarva && skin != null && skin.iconEggHatching != null ? skin.iconEggHatching : SkinIcon(skin?.iconEgg, art.Egg);
             Icon(new Vector2(x + 9f, y + row * 0.5f), eggIcon, maxSize: 20f);
-            string broodText = colony.RaiseQueue.Count > 0 ? $"{brood} growing  +{colony.RaiseQueue.Count} queued" : $"{brood} growing";
+            string broodText = colony.RaiseQueue.Count > 0 ? Loc.F("{0} growing  +{1} queued", brood, colony.RaiseQueue.Count) : Loc.F("{0} growing", brood);
             Text(new Rect(textX, y, right - textX, row), broodText, brood > 0 ? Good : Muted, medium, TextAnchor.MiddleLeft);
             if (hungry > 0) Text(new Rect(x, y, right - x, row), "hungry!", Bad, small, TextAnchor.MiddleRight);
             y += row;
@@ -674,10 +674,24 @@ namespace AntColony
             CasteCount(position, sprite, tint, game.Colony.CountAnts(role), letter);
         }
 
+        /// <summary>The caste letters after the counts (W S B A) in the current language.</summary>
+        static string CasteLetter(string letter)
+        {
+            if (!Loc.IsTurkish) return letter;
+            switch (letter)
+            {
+                case "W": return "İ"; // İşçi
+                case "S": return "A"; // Asker
+                case "B": return "Y"; // Yapıcı
+                case "A": return "T"; // Tükürücü
+                default: return letter;
+            }
+        }
+
         void CasteCount(Vector2 position, Sprite icon, Color tint, int count, string letter)
         {
             Icon(new Vector2(position.x + 9f, position.y + 12f), icon, tint, maxSize: 18f);
-            Text(new Rect(position.x + 22f, position.y, 44f, 24f), $"{count} {letter}", Cream, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(position.x + 22f, position.y, 44f, 24f), $"{count} {CasteLetter(letter)}", Cream, medium, TextAnchor.MiddleLeft);
         }
 
         /// <summary>The flat wood box: dark outline, a light rim (lighter on top), a dark inner line, and cut corners.</summary>
@@ -744,9 +758,9 @@ namespace AntColony
             bool underAttack = waves.IsNestUnderAttack;
             bool tutorialWait = game.Tutorial != null && game.Tutorial.HoldsWaves && !underAttack && waves.HasMoreWaves;
             string text = underAttack ? "Ant hill under attack!"
-                : tutorialWait ? $"Wave {waves.CurrentWave + 1}: after the tutorial"
-                : waves.HasMoreWaves ? $"Wave {waves.CurrentWave + 1}/{waves.TotalWaves} in {Mathf.CeilToInt(waves.TimeUntilNextWave)}s"
-                : $"Final wave! {waves.Enemies.Count} left";
+                : tutorialWait ? Loc.F("Wave {0}: after the tutorial", waves.CurrentWave + 1)
+                : waves.HasMoreWaves ? Loc.F("Wave {0}/{1} in {2}s", waves.CurrentWave + 1, waves.TotalWaves, Mathf.CeilToInt(waves.TimeUntilNextWave))
+                : Loc.F("Final wave! {0} left", waves.Enemies.Count);
 
             float width = 230f;
             var panel = new Rect((screenWidth - width) * 0.5f, Margin, width, 34f);
@@ -801,7 +815,7 @@ namespace AntColony
             bool unknown = record == null;
             bool partial = record != null && record.partial;
             string status = unknown ? "History unavailable" : record.completed ? "Cleared" : "In progress";
-            Text(new Rect(panel.x + 68f, navY, width - 136f, 30f), $"Wave {selectedReportWave}", Gold, large, TextAnchor.MiddleCenter);
+            Text(new Rect(panel.x + 68f, navY, width - 136f, 30f), Loc.F("Wave {0}", selectedReportWave), Gold, large, TextAnchor.MiddleCenter);
             Text(new Rect(panel.x + 68f, navY + 32f, width - 136f, 18f), status,
                 record != null && record.completed ? Good : Muted, small, TextAnchor.MiddleCenter);
 
@@ -834,7 +848,7 @@ namespace AntColony
                 : "Combat losses belong to the attacking enemy's wave. Remaining includes arrivals.";
             Text(new Rect(panel.x + 18f, panel.yMax - 48f, width - 36f, 20f), note, Muted, small);
             Text(new Rect(panel.x + 18f, panel.yMax - 26f, width - 36f, 18f),
-                $"Non-combat losses this game: {upkeep?.TotalLosses ?? 0}   (starvation: {upkeep?.starved ?? 0})", Muted, small);
+                Loc.F("Non-combat losses this game: {0}   (starvation: {1})", upkeep?.TotalLosses ?? 0, upkeep?.starved ?? 0), Muted, small);
         }
 
         void DrawWaveLossCard(Rect card, string role, int losses, bool unknown, bool partial, Color tint)
@@ -851,7 +865,7 @@ namespace AntColony
             else Icon(image.center, game.Art.AntTop.Walk[0], tint, Mathf.Min(image.width, image.height));
             float left = card.x + 88f;
             float textWidth = card.width - 100f;
-            Text(new Rect(left, card.y + 12f, textWidth, 20f), role + " losses", Cream, small);
+            Text(new Rect(left, card.y + 12f, textWidth, 20f), Loc.F("{0} losses", Loc.T(role)), Cream, small);
             string value = unknown ? "--" : losses.ToString() + (partial ? "+" : "");
             Text(new Rect(left, card.y + 42f, textWidth, 30f), value, losses > 0 ? Bad : Good, large);
         }
@@ -880,7 +894,7 @@ namespace AntColony
             if (tips.Count == 0 || tips[0].Urgency == Advisor.Urgency.Info) return top;
 
             Advisor.Tip tip = tips[0];
-            string footer = tips.Count > 1 ? $"R: report  (+{tips.Count - 1} more tips)" : "R: colony report";
+            string footer = tips.Count > 1 ? Loc.F("R: report  (+{0} more tips)", tips.Count - 1) : "R: colony report";
             UiSkin skin = game.UiSkin;
             if (skin != null && skin.card != null)
             {
@@ -1024,17 +1038,18 @@ namespace AntColony
                 BuildMode buildMode = game.BuildMode;
                 actions.Add(new ActionSpec
                 {
-                    Key = "4", Label = "Wall", Icon = art.Wall, IconTint = Color.white, Cost = $"{settings.wallCost}S",
-                    TooltipTitle = "Wall", Tooltip = $"Drag a line on the surface. {settings.wallCost} stone per block (dig for stone). " +
-                                                     "Enemies must chew through walls, and your ants walk around them: leave a gap so they can get out!",
+                    Key = "4", Label = "Wall", Icon = art.Wall, IconTint = Color.white, Cost = Loc.F("{0}S", settings.wallCost),
+                    TooltipTitle = "Wall", Tooltip = Loc.F("Drag a line on the surface. {0} stone per block (dig for stone). " +
+                                                     "Enemies must chew through walls, and your ants walk around them: leave a gap so they can get out!", settings.wallCost),
                     Available = game.Colony.Stone >= settings.wallCost, Active = buildMode.IsActive && buildMode.Kind == StructureKind.Wall,
                     OnClick = () => buildMode.Toggle(StructureKind.Wall),
                 });
                 actions.Add(new ActionSpec
                 {
-                    Key = "5", Label = "Tower", Icon = art.Tower, IconTint = Color.white, Cost = $"{settings.towerCost}+{settings.towerStoneCost}S",
-                    TooltipTitle = "Acid tower", Tooltip = $"Click to place. {settings.towerCost} food and {settings.towerStoneCost} stone. " +
+                    Key = "5", Label = "Tower", Icon = art.Tower, IconTint = Color.white, Cost = Loc.F("{0}+{1}S", settings.towerCost, settings.towerStoneCost),
+                    TooltipTitle = "Acid tower", Tooltip = Loc.F("Click to place. {0} food and {1} stone. " +
                                                            "Spits acid at enemies in range (hover a tower to see its range). Ants walk around towers.",
+                                                           settings.towerCost, settings.towerStoneCost),
                     Available = food >= settings.towerCost && game.Colony.Stone >= settings.towerStoneCost, Active = buildMode.IsActive && buildMode.Kind == StructureKind.Tower,
                     OnClick = () => buildMode.Toggle(StructureKind.Tower),
                 });
@@ -1059,11 +1074,11 @@ namespace AntColony
                     Available = true, Active = tools.Tool == NestTool.Dig, OnClick = () => tools.Toggle(NestTool.Dig),
                 });
                 actions.Add(RoomAction("5", NestTool.Storage, art.StoragePile,
-                    $"Holds {settings.storageRoomCapacity} more food and leaves. Workers drop loads at the nearest one, so build near the entrance."));
+                    Loc.F("Holds {0} more food and leaves. Workers drop loads at the nearest one, so build near the entrance.", settings.storageRoomCapacity)));
                 actions.Add(RoomAction("6", NestTool.Cradle, art.Cradle,
                     "Holds one egg or larva. More cradles = more ants growing at once."));
                 actions.Add(RoomAction("7", NestTool.Garden, art.FungusGarden,
-                    $"Turns 1 leaf into {settings.gardenFoodPerLeaf} food every {settings.gardenCycleTime:0}s. Most food outside is leaves!"));
+                    Loc.F("Turns 1 leaf into {0} food every {1:0}s. Most food outside is leaves!", settings.gardenFoodPerLeaf, settings.gardenCycleTime)));
                 actions.Add(new ActionSpec
                 {
                     Key = "X", Label = "Remove", Icon = null, Cost = "",
@@ -1107,10 +1122,10 @@ namespace AntColony
             CasteCosts costs = settings.CostsFor(role);
             return new ActionSpec
             {
-                Key = key, Label = queued > 0 ? $"{label} +{queued}" : label, Icon = icon, IconTint = tint,
+                Key = key, Label = queued > 0 ? $"{Loc.T(label)} +{queued}" : label, Icon = icon, IconTint = tint,
                 Cost = $"{settings.RaiseCost(role)}",
-                TooltipTitle = $"Raise a {label.ToLower()}",
-                Tooltip = $"{description}\nEgg {settings.eggCost} food, then workers feed the larva {costs.larvaFood} food. Needs a free cradle.",
+                TooltipTitle = Loc.F("Raise a {0}", Loc.T(label)),
+                Tooltip = Loc.T(description) + Loc.F("\nEgg {0} food, then workers feed the larva {1} food. Needs a free cradle.", settings.eggCost, costs.larvaFood),
                 Available = game.Colony.Food >= settings.eggCost,
                 OnClick = () => game.Colony.QueueRaise(role),
             };
@@ -1124,7 +1139,7 @@ namespace AntColony
             return new ActionSpec
             {
                 Key = key, Label = tool == NestTool.Garden ? "Garden" : info.Name, Icon = icon, IconTint = Color.white, Cost = $"{cost}",
-                TooltipTitle = $"{info.Name}  ({info.Size.x}x{info.Size.y} tiles)", Tooltip = $"{description}\nPlace it on dug-out tunnel.",
+                TooltipTitle = Loc.F("{0}  ({1}x{2} tiles)", Loc.T(info.Name), info.Size.x, info.Size.y), Tooltip = Loc.T(description) + "\n" + Loc.T("Place it on dug-out tunnel."),
                 Available = game.Colony.Food >= cost, Active = game.NestTools.Tool == tool,
                 OnClick = () => game.NestTools.Toggle(tool),
             };
@@ -1288,7 +1303,7 @@ namespace AntColony
         {
             const float width = 260f;
             float innerWidth = width - 24f;
-            string body = string.IsNullOrEmpty(action.Cost) ? action.Tooltip : $"{action.Tooltip}\nCost: {action.Cost} food";
+            string body = string.IsNullOrEmpty(action.Cost) ? action.Tooltip : Loc.T(action.Tooltip) + Loc.F("\nCost: {0} food", action.Cost);
             float titleHeight = font.MeasureHeight(action.TooltipTitle, medium, innerWidth);
             float bodyHeight = font.MeasureHeight(body, small, innerWidth);
             float height = 18f + titleHeight + 4f + bodyHeight;
@@ -1315,9 +1330,9 @@ namespace AntColony
             else if (onSurface && buildMode.IsActive)
                 hint = buildMode.Kind == StructureKind.Wall ? "Drag to lay walls   -   right-click: stop" : "Click to place a tower   -   right-click: stop";
             else if (onSurface && selectedCount > 0)
-                hint = $"{selectedCount} selected   -   right-click enemy: attack   -   right-click ground: move   -   Q: halve";
+                hint = Loc.F("{0} selected   -   right-click enemy: attack   -   right-click ground: move   -   Q: halve", selectedCount);
             else if (!onSurface && tools.IsActive && tools.PreviewSummary.Length > 0)
-                hint = $"{tools.PreviewSummary}   -   release to apply";
+                hint = tools.PreviewSummary + Loc.T("   -   release to apply");
             else if (!onSurface && tools.IsActive)
                 hint = tools.Tool == NestTool.Dig ? "Drag a box over soil   -   right-click: stop"
                      : tools.Tool == NestTool.Remove ? "Drag a box: remove rooms, fill tunnels   -   right-click: stop"
@@ -1378,11 +1393,11 @@ namespace AntColony
             y = FlowRow(left, y, columnWidth, "Eaten", -eaten, biggest, Bad);
             float net = stats.NetPerMinute;
             Text(new Rect(left, y + 4f, columnWidth, 24f), "Net", Cream, medium);
-            Text(new Rect(left, y + 4f, columnWidth, 24f), $"{net:+0;-0;0}/min", net >= 0f ? Good : Bad, large, TextAnchor.UpperRight);
+            Text(new Rect(left, y + 4f, columnWidth, 24f), Loc.F("{0:+0;-0;0}/min", net), net >= 0f ? Good : Bad, large, TextAnchor.UpperRight);
             y += 34f;
             if (stats.Wasted.PerMinute >= 1f)
             {
-                Text(new Rect(left, y, columnWidth, 14f), $"Wasted {stats.Wasted.PerMinute:0}/min: storage full!", Bad, small);
+                Text(new Rect(left, y, columnWidth, 14f), Loc.F("Wasted {0:0}/min: storage full!", stats.Wasted.PerMinute), Bad, small);
                 y += 18f;
             }
 
@@ -1392,9 +1407,9 @@ namespace AntColony
             int capacity = Mathf.Max(1, colony.StorageCapacity);
             StackedBar(new Rect(left, y, columnWidth, 12f), new[] { (colony.Food / (float)capacity, Gold), (colony.Leaves / (float)capacity, LeafOrange) });
             y += 20f;
-            Legend(left, y, Gold, $"Food {colony.Food}");
-            Legend(left + 92f, y, LeafOrange, $"Leaves {colony.Leaves}");
-            Text(new Rect(left, y, columnWidth, 14f), $"Free {colony.FreeSpace}", Muted, small, TextAnchor.UpperRight);
+            Legend(left, y, Gold, Loc.F("Food {0}", colony.Food));
+            Legend(left + 92f, y, LeafOrange, Loc.F("Leaves {0}", colony.Leaves));
+            Text(new Rect(left, y, columnWidth, 14f), Loc.F("Free {0}", colony.FreeSpace), Muted, small, TextAnchor.UpperRight);
             y += 26f;
 
             Text(new Rect(left, y, columnWidth, 14f), "Fungus gardens", Muted, small);
@@ -1405,7 +1420,7 @@ namespace AntColony
             {
                 if (room.Type == RoomType.Garden && room.IsBuilt && room.IsWorking) working++;
             }
-            Text(new Rect(left, y, columnWidth, 14f), $"{built} built, {working} working   leaves in +{stats.ForagedLeaves.PerMinute:0}/min", Cream, small);
+            Text(new Rect(left, y, columnWidth, 14f), Loc.F("{0} built, {1} working   leaves in +{2:0}/min", built, working, stats.ForagedLeaves.PerMinute), Cream, small);
 
             // Right column: workers and brood.
             y = top;
@@ -1418,15 +1433,15 @@ namespace AntColony
             Color nurseColor = new Color(0.95f, 0.6f, 0.75f);
             StackedBar(new Rect(right, y, columnWidth, 12f), new[] { (foraging / total, Gold), (nursing / total, nurseColor), (idle / total, Muted) });
             y += 20f;
-            Legend(right, y, Gold, $"Foraging {foraging}");
-            Legend(right + 100f, y, nurseColor, $"Nursing {nursing}");
-            Legend(right + 194f, y, Muted, $"Idle {idle}");
+            Legend(right, y, Gold, Loc.F("Foraging {0}", foraging));
+            Legend(right + 100f, y, nurseColor, Loc.F("Nursing {0}", nursing));
+            Legend(right + 194f, y, Muted, Loc.F("Idle {0}", idle));
             y += 24f;
 
             float trip = stats.AverageTripTime;
             string rating = trip <= 0f ? "-" : trip < 20f ? "fast" : trip < 30f ? "ok" : "slow";
             Color ratingColor = trip <= 0f ? Muted : trip < 20f ? Good : trip < 30f ? Gold : Bad;
-            Text(new Rect(right, y, columnWidth, 14f), trip > 0f ? $"Average trip {trip:0}s" : "Average trip -", Cream, small);
+            Text(new Rect(right, y, columnWidth, 14f), trip > 0f ? Loc.F("Average trip {0:0}s", trip) : "Average trip -", Cream, small);
             Text(new Rect(right, y, columnWidth, 14f), rating, ratingColor, small, TextAnchor.UpperRight);
             y += 26f;
 
@@ -1450,7 +1465,7 @@ namespace AntColony
                 y += 18f;
             }
             if (colony.RaiseQueue.Count > 0)
-                Text(new Rect(right, y + 2f, columnWidth, 14f), $"Queued: {colony.RaiseQueue.Count}", Muted, small);
+                Text(new Rect(right, y + 2f, columnWidth, 14f), Loc.F("Queued: {0}", colony.RaiseQueue.Count), Muted, small);
 
             // Bottom: every tip.
             float tipsTop = panel.y + 330f;
@@ -1459,7 +1474,7 @@ namespace AntColony
             IReadOnlyList<Advisor.Tip> tips = colony.Advisor.Tips;
             for (int i = 0; i < tips.Count && y < panel.yMax - 20f; i++)
             {
-                y += Text(new Rect(left, y, width - 32f, 40f), "- " + tips[i].Text, TipColor(tips[i].Urgency), small) + 4f;
+                y += Text(new Rect(left, y, width - 32f, 40f), "- " + Loc.T(tips[i].Text), TipColor(tips[i].Urgency), small) + 4f;
             }
         }
 
@@ -1592,8 +1607,8 @@ namespace AntColony
             GUI.color = previous;
             var caste = CasteArt(role);
             Icon(new Vector2(left + 10f, y + 12f), caste.sprite, caste.tint, maxSize: 18f);
-            Text(new Rect(left + 26f, y, 200f, 24f), $"{title}  {colony.CountAnts(role)}", Cream, medium, TextAnchor.MiddleLeft);
-            Text(new Rect(left, y, innerWidth - 4f, 24f), $"{free} free", free > 0 ? Good : Muted, small, TextAnchor.MiddleRight);
+            Text(new Rect(left + 26f, y, 200f, 24f), $"{Loc.T(title)}  {colony.CountAnts(role)}", Cream, medium, TextAnchor.MiddleLeft);
+            Text(new Rect(left, y, innerWidth - 4f, 24f), Loc.F("{0} free", free), free > 0 ? Good : Muted, small, TextAnchor.MiddleRight);
             y += 32f;
 
             foreach (Mission mission in missions)
@@ -1604,7 +1619,7 @@ namespace AntColony
                 if (count > 0)
                 {
                     // How many are actually working, so an idle mission (e.g. no hungry larvae) is easy to spot.
-                    string activity = busy == count ? "all working" : busy == 0 ? "waiting for work" : $"{busy} working, {count - busy} waiting";
+                    string activity = busy == count ? "all working" : busy == 0 ? "waiting for work" : Loc.F("{0} working, {1} waiting", busy, count - busy);
                     float nameWidth = font.Measure(Missions.NameOf(mission), medium);
                     Text(new Rect(left + nameWidth + 12f, y + 5f, textWidth - nameWidth - 12f, 14f), activity, busy > 0 ? Good : Muted, small);
                 }
@@ -1755,7 +1770,7 @@ namespace AntColony
             }
 
             string playing = audio.NowPlaying != null ? PrettyTrackName(audio.NowPlaying.name) : "No track playing";
-            Text(new Rect(panel.x + 18f, panel.y + 52f, playerWidth - 36f, 20f), "Now playing: " + playing, Cream, medium);
+            Text(new Rect(panel.x + 18f, panel.y + 52f, playerWidth - 36f, 20f), Loc.F("Now playing: {0}", Loc.T(playing)), Cream, medium);
             string status = audio.Muted ? "Audio is muted in Settings."
                 : audio.PlaylistPlaying ? "Choose a track below."
                 : "Event music is playing; your selection resumes afterwards.";
@@ -1812,7 +1827,7 @@ namespace AntColony
                 if (SmallButton(new Rect(panel.x + 18f, y, 32f, 26f), "^", musicFirstTrack > 0)) musicFirstTrack--;
                 if (SmallButton(new Rect(panel.x + playerWidth - 50f, y, 32f, 26f), "v", musicFirstTrack < maxFirst)) musicFirstTrack++;
                 Text(new Rect(panel.x + 56f, y, playerWidth - 112f, 26f),
-                    $"{musicFirstTrack + 1}-{Mathf.Min(playlist.Length, musicFirstTrack + visibleRows)} / {playlist.Length}   (scroll)",
+                    $"{musicFirstTrack + 1}-{Mathf.Min(playlist.Length, musicFirstTrack + visibleRows)} / {playlist.Length}   " + Loc.T("(scroll)"),
                     Muted, small, TextAnchor.MiddleCenter);
             }
         }
@@ -1882,11 +1897,11 @@ namespace AntColony
             const float width = 480f;
             const float padding = 22f;
             float textWidth = width - padding * 2f;
-            string body = step.Body;
-            if (!tutorial.CanSkipStep) body += "\n\n" + tutorial.SkipExplanation;
+            string body = Loc.T(step.Body);
+            if (!tutorial.CanSkipStep) body += "\n\n" + Loc.T(tutorial.SkipExplanation);
             float bodyHeight = font.MeasureHeight(body, medium, textWidth);
             bool hasGoal = !string.IsNullOrEmpty(step.Goal);
-            float goalHeight = hasGoal ? font.MeasureHeight("Your goal: " + step.Goal, small, textWidth) + 12f : 0f;
+            float goalHeight = hasGoal ? font.MeasureHeight(Loc.F("Your goal: {0}", Loc.T(step.Goal)), small, textWidth) + 12f : 0f;
             const float buttonHeight = 46f;
             float height = padding + 32f + 10f + bodyHeight + 14f + goalHeight + buttonHeight + padding;
             var panel = Snap(new Rect((screenWidth - width) * 0.5f, Mathf.Max(70f, (screenHeight - height) * 0.42f), width, height));
@@ -1900,7 +1915,7 @@ namespace AntColony
             y += Text(new Rect(x, y, textWidth, bodyHeight + 4f), body, Cream, medium) + 14f;
             if (hasGoal)
             {
-                Text(new Rect(x, y, textWidth, goalHeight), "Your goal: " + step.Goal, Good, small);
+                Text(new Rect(x, y, textWidth, goalHeight), Loc.F("Your goal: {0}", Loc.T(step.Goal)), Good, small);
                 y += goalHeight;
             }
 
@@ -1917,7 +1932,7 @@ namespace AntColony
             Tutorial.Step step = tutorial.Current;
             if (step == null || string.IsNullOrEmpty(step.Goal)) return;
 
-            string label = $"Tutorial {tutorial.StepNumber}/{tutorial.StepCount}";
+            string label = Loc.F("Tutorial {0}/{1}", tutorial.StepNumber, tutorial.StepCount);
             float width = Mathf.Min(screenWidth - 2f * Margin, Mathf.Max(520f, font.Measure(step.Goal, medium) + 40f));
             // Under the wave banner and the line where messages appear.
             var bar = Snap(new Rect((screenWidth - width) * 0.5f, Margin + 34f + 52f, width, 116f));
@@ -2068,11 +2083,12 @@ namespace AntColony
 
             y += rowHeight * 3f + 4f;
             if (SmallButton(new Rect(panel.x + 16f, y, 150f, 34f), audio.Muted ? "Unmute" : "Mute all", true)) audio.SetMuted(!audio.Muted);
+            if (SmallButton(new Rect(panel.xMax - 16f - 210f, y, 210f, 34f), Loc.NameOf(Loc.Current), true)) Loc.Next();
             AudioClip track = audio.NowPlaying;
             string trackName = track != null ? PrettyTrackName(track.name) : "-";
-            Text(new Rect(panel.x + 16f, y + 46f, width - 32f, 14f), $"Now playing: {trackName}", Muted, small);
+            Text(new Rect(panel.x + 16f, y + 46f, width - 32f, 14f), Loc.F("Now playing: {0}", trackName), Muted, small);
             if (SmallButton(new Rect(panel.x + 16f, y + 70f, width - 32f, 36f),
-                "Autosave after waves: " + (game.AutoSaveAfterWave ? "ON" : "OFF"), true))
+                Loc.T("Autosave after waves: ") + Loc.T(game.AutoSaveAfterWave ? "ON" : "OFF"), true))
                 game.SetAutoSaveAfterWave(!game.AutoSaveAfterWave);
             Text(new Rect(panel.x + 16f, y + 112f, width - 32f, 24f),
                 "Uses the same slot as Save game. F5 still saves manually.", Muted, small);
@@ -2156,7 +2172,7 @@ namespace AntColony
             float textWidth = panel.width - 32f;
             float left = panel.x + 16f;
             float y = panel.y + 48f;
-            foreach (string line in HelpBasics) y += Paragraph(new Rect(left, y, textWidth, 0f), "- " + line, Cream, small, draw) + 5f;
+            foreach (string line in HelpBasics) y += Paragraph(new Rect(left, y, textWidth, 0f), "- " + Loc.T(line), Cream, small, draw) + 5f;
 
             y += 8f;
             float column = (panel.width - 48f) * 0.5f;
@@ -2280,9 +2296,9 @@ namespace AntColony
                     {
                         int capacity = Mathf.Max(1, colony.StorageCapacity);
                         int stored = colony.Food + colony.Leaves;
-                        lines.Add(($"Holds {settings.storageRoomCapacity} more food or leaves", Cream));
-                        lines.Add(($"Colony stores: {colony.Food} food, {colony.Leaves} leaves", Cream));
-                        lines.Add((colony.FreeSpace > 0 ? $"{colony.FreeSpace} free space" : "Full! Build another storage.", colony.FreeSpace > 0 ? Good : Bad));
+                        lines.Add((Loc.F("Holds {0} more food or leaves", settings.storageRoomCapacity), Cream));
+                        lines.Add((Loc.F("Colony stores: {0} food, {1} leaves", colony.Food, colony.Leaves), Cream));
+                        lines.Add((colony.FreeSpace > 0 ? Loc.F("{0} free space", colony.FreeSpace) : "Full! Build another storage.", colony.FreeSpace > 0 ? Good : Bad));
                         barFraction = stored / (float)capacity;
                         barLabel = $"{stored}/{capacity}";
                         break;
@@ -2291,8 +2307,8 @@ namespace AntColony
                     {
                         string state = room.IsWorking ? "Growing fungus" : colony.Leaves <= 0 ? "Idle: no leaves" : "Idle: storage full";
                         lines.Add((state, room.IsWorking ? Good : Bad));
-                        lines.Add(($"1 leaf -> {settings.gardenFoodPerLeaf} food every {settings.gardenCycleTime:0.#}s", Cream));
-                        lines.Add(($"Leaves waiting: {colony.Leaves}", colony.Leaves > 0 ? Cream : Muted));
+                        lines.Add((Loc.F("1 leaf -> {0} food every {1:0.#}s", settings.gardenFoodPerLeaf, settings.gardenCycleTime), Cream));
+                        lines.Add((Loc.F("Leaves waiting: {0}", colony.Leaves), colony.Leaves > 0 ? Cream : Muted));
                         barFraction = room.IsWorking ? room.GardenTimer / Mathf.Max(0.01f, settings.gardenCycleTime) : 0f;
                         barColor = Good;
                         barLabel = "next food";
@@ -2309,9 +2325,9 @@ namespace AntColony
                         else
                         {
                             string what = brood.Stage == BroodStage.Egg ? "egg" : "larva";
-                            lines.Add(($"{brood.Caste} {what}", Gold));
+                            lines.Add((Loc.F(what == "egg" ? "{0} egg" : "{0} larva", Loc.T(brood.Caste.ToString())), Gold));
                             if (brood.Stage == BroodStage.Larva)
-                                lines.Add(($"Fed {brood.FoodFed}/{brood.FoodNeeded}", brood.IsWaitingForFood ? Bad : Cream));
+                                lines.Add((Loc.F("Fed {0}/{1}", brood.FoodFed, brood.FoodNeeded), brood.IsWaitingForFood ? Bad : Cream));
                             lines.Add((brood.IsWaitingForFood ? "Hungry! Needs a larva feeder." : brood.HasNurse ? "Being fed." : "Growing.", brood.IsWaitingForFood ? Bad : Good));
                             barFraction = brood.Progress;
                             barColor = Brood.CasteColor(brood.Caste);
@@ -2321,9 +2337,9 @@ namespace AntColony
                     }
                     case RoomType.Queen:
                     {
-                        lines.Add(($"Health {Mathf.CeilToInt(colony.QueenHealth)}/{Mathf.CeilToInt(colony.QueenMaxHealth)}", Cream));
-                        lines.Add(($"Eggs queued: {colony.RaiseQueue.Count}", Cream));
-                        lines.Add(($"Holds {settings.baseStorage} food or leaves", Muted));
+                        lines.Add((Loc.F("Health {0}/{1}", Mathf.CeilToInt(colony.QueenHealth), Mathf.CeilToInt(colony.QueenMaxHealth)), Cream));
+                        lines.Add((Loc.F("Eggs queued: {0}", colony.RaiseQueue.Count), Cream));
+                        lines.Add((Loc.F("Holds {0} food or leaves", settings.baseStorage), Muted));
                         barFraction = colony.QueenHealth / Mathf.Max(1f, colony.QueenMaxHealth);
                         barLabel = "health";
                         break;
@@ -2380,7 +2396,7 @@ namespace AntColony
         static string DescribeRoom(Room room, out Color color)
         {
             color = Gold;
-            if (!room.IsBuilt) return $"{room.Info.Name} (to build)";
+            if (!room.IsBuilt) return Loc.F("{0} (to build)", Loc.T(room.Info.Name));
 
             switch (room.Type)
             {
@@ -2390,9 +2406,9 @@ namespace AntColony
                     if (brood.IsWaitingForFood)
                     {
                         color = Bad;
-                        return $"{brood.Caste} larva - hungry";
+                        return Loc.F("{0} larva - hungry", Loc.T(brood.Caste.ToString()));
                     }
-                    return brood.Stage == BroodStage.Egg ? $"{brood.Caste} egg" : $"{brood.Caste} larva";
+                    return brood.Stage == BroodStage.Egg ? Loc.F("{0} egg", Loc.T(brood.Caste.ToString())) : Loc.F("{0} larva", Loc.T(brood.Caste.ToString()));
                 case RoomType.Garden:
                     if (!room.IsWorking) color = Muted;
                     return room.IsWorking ? "Garden" : "Garden (no leaves)";
@@ -2444,7 +2460,7 @@ namespace AntColony
             {
                 int count = sides[side].Count;
                 if (count == 0) continue;
-                string noun = count == 1 ? "enemy" : "enemies";
+                string noun = Loc.T(count == 1 ? "enemy" : "enemies");
                 string label = side == 0 ? $"< {count} {noun}" : side == 1 ? $"{count} {noun} >" : side == 2 ? $"^ {count} {noun} ^" : $"v {count} {noun} v";
                 TextAnchor anchor = side == 0 ? TextAnchor.MiddleLeft : side == 1 ? TextAnchor.MiddleRight : TextAnchor.MiddleCenter;
                 Rect rect = rects[side];
@@ -2488,13 +2504,13 @@ namespace AntColony
             string kind = ant.Role == AntRole.Spitter ? "Acid spitter" : ant.Role.ToString();
             bool hasMission = ant.Role == AntRole.Worker || ant.Role == AntRole.Builder;
             string mission = hasMission ? (ant.Mission == Mission.Auto ? "Free" : Missions.NameOf(ant.Mission)) : "";
-            string status = ant.Status.ToString().ToUpperInvariant();
+            string status = Loc.T(ant.Status.ToString());
             Color statusColor = ant.Status == AntState.Idle ? Muted
                 : ant.Status == AntState.Fighting || ant.Status == AntState.Fleeing ? Bad
                 : ant.Status == AntState.Working ? Good : Gold;
 
             const float width = 210f;
-            string activity = ant.Activity;
+            string activity = Loc.T(ant.Activity);
             float activityHeight = string.IsNullOrEmpty(activity) ? 0f : font.MeasureHeight(activity, small, width - 20f) + 2f;
             float height = 10f + 20f + 16f + 18f + activityHeight + 16f + 6f;
 
@@ -2513,7 +2529,7 @@ namespace AntColony
             float line = card.y + 8f;
             Text(new Rect(left, line, textWidth, 20f), ant.Name, Gold, medium, TextAnchor.MiddleLeft);
             line += 20f;
-            Text(new Rect(left, line, textWidth, 14f), hasMission ? $"{kind} - {mission}" : kind, Cream, small, TextAnchor.MiddleLeft);
+            Text(new Rect(left, line, textWidth, 14f), hasMission ? $"{Loc.T(kind)} - {Loc.T(mission)}" : kind, Cream, small, TextAnchor.MiddleLeft);
             line += 16f;
             Text(new Rect(left, line, textWidth, 16f), status, statusColor, medium, TextAnchor.MiddleLeft);
             line += 18f;
@@ -2588,7 +2604,7 @@ namespace AntColony
             int survivedWaves = won ? totalWaves : Mathf.Max(0, game.Waves.CurrentWave - 1);
 
             string title = won ? "The colony survived!" : "The queen has fallen";
-            string subtitle = won ? $"All {totalWaves} waves defeated." : $"You held out for {survivedWaves} of {totalWaves} waves.";
+            string subtitle = won ? Loc.F("All {0} waves defeated.", totalWaves) : Loc.F("You held out for {0} of {1} waves.", survivedWaves, totalWaves);
 
             float centerY = screenHeight * 0.38f;
             if (!TitleBanner(screenWidth * 0.5f, centerY + 4f, 560f, title, LeafOrange))
@@ -2614,7 +2630,7 @@ namespace AntColony
             GUI.color = previous;
             uiRects.Add(new Rect(0f, 0f, screenWidth, screenHeight));
 
-            const string title = "Autumn Ant Colony";
+            const string title = "Queen's Colony";
             const string tagline = "Dig, gather and defend your queen through the fall.";
             float centerX = screenWidth * 0.5f;
             bool planks = game.UiSkin != null && game.UiSkin.HasMenuButtons;

@@ -56,7 +56,7 @@ namespace AntColony
         {
             Clear();
             foreach (SoldierAnt soldier in game.Colony.Soldiers) Add(soldier);
-            game.ShowMessage(selected.Count > 0 ? $"{selected.Count} soldiers selected." : "You have no soldiers yet.");
+            game.ShowMessage(selected.Count > 0 ? Loc.F("{0} soldiers selected.", selected.Count) : "You have no soldiers yet.");
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace AntColony
 
             int keep = (selected.Count + 1) / 2;
             for (int i = selected.Count - 1; i >= keep; i--) Remove(selected[i]);
-            game.ShowMessage($"{keep} soldier{(keep == 1 ? "" : "s")} selected.");
+            game.ShowMessage(Loc.F(keep == 1 ? "{0} soldier selected." : "{0} soldiers selected.", keep));
         }
 
         /// <summary>Called by <see cref="ColonyControls"/> every frame while the surface is on screen.</summary>
@@ -168,10 +168,11 @@ namespace AntColony
             {
                 if (soldier.Role == role && soldier.IsOnSurface) Add(soldier);
             }
-            string kind = role == AntRole.Spitter ? "spitter" : "soldier";
             int count = 0;
             foreach (SoldierAnt soldier in selected) if (soldier.Role == role) count++;
-            game.ShowMessage($"All {count} {kind}{(count == 1 ? "" : "s")} selected.");
+            game.ShowMessage(role == AntRole.Spitter
+                ? Loc.F(count == 1 ? "All {0} spitter selected." : "All {0} spitters selected.", count)
+                : Loc.F(count == 1 ? "All {0} soldier selected." : "All {0} soldiers selected.", count));
         }
 
         void BoxSelect(Rect screenRect, bool additive)

@@ -121,7 +121,7 @@ namespace AntColony
             if (role == AntRole.Soldier || role == AntRole.Spitter) game.Tutorial.Notify(TutorialSignal.SoldierQueued);
             EggsOrdered++;
             if (role == AntRole.Soldier) SoldiersOrdered++;
-            game.ShowMessage($"The queen will lay a {role.ToString().ToLower()} egg ({game.Settings.RaiseCost(role)} food in all).");
+            game.ShowMessage(Loc.F("The queen will lay a {0} egg ({1} food in all).", Loc.T(role.ToString()), game.Settings.RaiseCost(role)));
         }
 
         public int CountQueued(AntRole role)
@@ -139,7 +139,7 @@ namespace AntColony
         {
             if (Food < cost)
             {
-                game.ShowMessage($"Not enough food (need {cost}).");
+                game.ShowMessage(Loc.F("Not enough food (need {0}).", cost));
                 game.Audio.Play(Sound.UiError);
                 return false;
             }
@@ -181,8 +181,7 @@ namespace AntColony
         {
             if (Food < foodCost || Stone < stoneCost)
             {
-                string missing = Food < foodCost ? $"food (need {foodCost})" : $"stone (need {stoneCost}, dig for it)";
-                game.ShowMessage($"Not enough {missing}.");
+                game.ShowMessage(Food < foodCost ? Loc.F("Not enough food (need {0}).", foodCost) : Loc.F("Not enough stone (need {0}, dig for it).", stoneCost));
                 game.Audio.Play(Sound.UiError);
                 return false;
             }
@@ -491,7 +490,7 @@ namespace AntColony
                 game.PlayEffect(EffectKind.AntHatched, room.StandPoint);
                 brood.Destroy();
                 room.Brood = null;
-                game.ShowMessage($"A new {brood.Caste.ToString().ToLower()} has grown up.");
+                game.ShowMessage(Loc.F("A new {0} has grown up.", Loc.T(brood.Caste.ToString())));
             }
         }
 

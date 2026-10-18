@@ -5,7 +5,9 @@ namespace AntColony
 {
     /// <summary>
     /// A tiny 5x7 bitmap font drawn with the immediate-mode GUI, so the HUD text is real pixel art instead of a
-    /// smooth system font. Capitals only (text is upper-cased); glyphs are generated into one texture at start.
+    /// smooth system font. Capitals only (text is upper-cased, the Turkish way in Turkish: i -> İ); glyphs are
+    /// generated into one texture at start. Ç Ğ İ Ö Ş Ü reach a little above or below the 7 rows.
+    /// Every text is translated (<see cref="Loc.T"/>) before it's measured or drawn.
     /// Sizes are "font pixels": the size of one glyph pixel in GUI units. They are snapped to whole screen
     /// pixels, so the letters stay crisp at any resolution.
     /// </summary>
@@ -13,7 +15,7 @@ namespace AntColony
     {
         const int GlyphHeight = 7;
         const int CellWidth = 6;
-        const int CellHeight = 8;
+        const int CellHeight = 11;
         const int Columns = 16;
         const int SpaceAdvance = 3;
         /// <summary>Line height in font pixels (7 for the glyph plus a gap).</summary>
@@ -23,6 +25,10 @@ namespace AntColony
         {
             public Rect Uv;
             public int Width;
+            /// <summary>Rows above the capital height (accents).</summary>
+            public int Above;
+            /// <summary>All rows, accents and tails included.</summary>
+            public int Height;
         }
 
         readonly Dictionary<char, Glyph> glyphs = new Dictionary<char, Glyph>();
@@ -33,7 +39,7 @@ namespace AntColony
 
         public PixelFont()
         {
-            List<KeyValuePair<char, string[]>> shapes = Shapes();
+            List<(char c, int above, string[] rows)> shapes = Shapes();
             int rows = Mathf.CeilToInt(shapes.Count / (float)Columns);
             atlas = new Texture2D(Columns * CellWidth, rows * CellHeight, TextureFormat.RGBA32, false)
             {
@@ -46,7 +52,7 @@ namespace AntColony
 
             for (int i = 0; i < shapes.Count; i++)
             {
-                string[] rowsOfGlyph = shapes[i].Value;
+                string[] rowsOfGlyph = shapes[i].rows;
                 int width = 0;
                 foreach (string row in rowsOfGlyph) width = Mathf.Max(width, row.Length);
 
@@ -60,10 +66,11 @@ namespace AntColony
                     }
                 }
 
+                int height = rowsOfGlyph.Length;
                 var uv = new Rect(
-                    (float)cellX / atlas.width, (float)(cellTop - GlyphHeight) / atlas.height,
-                    (float)width / atlas.width, (float)GlyphHeight / atlas.height);
-                glyphs[shapes[i].Key] = new Glyph { Uv = uv, Width = width };
+                    (float)cellX / atlas.width, (float)(cellTop - height) / atlas.height,
+                    (float)width / atlas.width, (float)height / atlas.height);
+                glyphs[shapes[i].c] = new Glyph { Uv = uv, Width = width, Above = shapes[i].above, Height = height };
             }
             atlas.Apply();
         }
@@ -74,17 +81,28 @@ namespace AntColony
         }
 
         /// <summary>Width of one line of text in GUI units at font pixel size <paramref name="size"/>.</summary>
-        public float Measure(string text, float size)
+        public float Measure(string text, float size) => MeasureLine(Loc.T(text), size);
+
+        float MeasureLine(string line, float size)
         {
             int pixels = 0;
-            foreach (char c in text.ToUpperInvariant()) pixels += Advance(c);
+            foreach (char c in Upper(line)) pixels += Advance(c);
             return Mathf.Max(0, pixels - 1) * size;
+        }
+
+        /// <summary>Upper case as the current language writes it (Turkish: i -> İ, ı -> I).</summary>
+        static string Upper(string text)
+        {
+            if (Loc.IsTurkish) text = text.Replace('i', 'İ');
+            // Mono's invariant upper case leaves ı (and sometimes the other Turkish letters) as they are.
+            return text.ToUpperInvariant().Replace('ı', 'I').Replace('ç', 'Ç').Replace('ğ', 'Ğ')
+                .Replace('ö', 'Ö').Replace('ş', 'Ş').Replace('ü', 'Ü');
         }
 
         /// <summary>Height a text takes when wrapped to <paramref name="width"/>.</summary>
         public float MeasureHeight(string text, float size, float width)
         {
-            return Wrap(text, size, width).Count * LineHeight * size;
+            return Wrap(Loc.T(text), size, width).Count * LineHeight * size;
         }
 
         /// <summary>
@@ -93,7 +111,7 @@ namespace AntColony
         /// </summary>
         public float Draw(Rect rect, string text, float size, Color color, TextAnchor alignment = TextAnchor.UpperLeft, bool shadow = true)
         {
-            List<string> lines = Wrap(text, size, rect.width);
+            List<string> lines = Wrap(Loc.T(text), size, rect.width);
             float totalHeight = lines.Count * LineHeight * size;
 
             float y = rect.y;
@@ -103,7 +121,7 @@ namespace AntColony
             Color previous = GUI.color;
             foreach (string line in lines)
             {
-                float lineWidth = Measure(line, size);
+                float lineWidth = MeasureLine(line, size);
                 float x = rect.x;
                 if (alignment == TextAnchor.UpperCenter || alignment == TextAnchor.MiddleCenter || alignment == TextAnchor.LowerCenter)
                     x = rect.x + (rect.width - lineWidth) * 0.5f;
@@ -127,7 +145,7 @@ namespace AntColony
 
         void DrawLine(string line, float x, float y, float size)
         {
-            foreach (char raw in line.ToUpperInvariant())
+            foreach (char raw in Upper(line))
             {
                 if (raw == ' ')
                 {
@@ -136,7 +154,7 @@ namespace AntColony
                 }
 
                 Glyph glyph = GlyphFor(raw);
-                GUI.DrawTextureWithTexCoords(new Rect(x, y, glyph.Width * size, GlyphHeight * size), atlas, glyph.Uv);
+                GUI.DrawTextureWithTexCoords(new Rect(x, y - glyph.Above * size, glyph.Width * size, glyph.Height * size), atlas, glyph.Uv);
                 x += (glyph.Width + 1) * size;
             }
         }
@@ -159,7 +177,7 @@ namespace AntColony
                 foreach (string word in paragraph.Split(' '))
                 {
                     string attempt = line.Length == 0 ? word : line + " " + word;
-                    if (line.Length > 0 && Measure(attempt, size) > width)
+                    if (line.Length > 0 && MeasureLine(attempt, size) > width)
                     {
                         lines.Add(line);
                         line = word;
@@ -180,10 +198,24 @@ namespace AntColony
             return Mathf.Max(1f, Mathf.Round(size * guiScale)) / guiScale;
         }
 
-        static List<KeyValuePair<char, string[]>> Shapes()
+        static List<(char c, int above, string[] rows)> Shapes()
         {
-            var shapes = new List<KeyValuePair<char, string[]>>();
-            void Add(char c, params string[] rows) => shapes.Add(new KeyValuePair<char, string[]>(c, rows));
+            var shapes = new List<(char c, int above, string[] rows)>();
+            void Add(char c, params string[] rows) => shapes.Add((c, 0, rows));
+            // Letters with marks: two rows of accent above the capital (mark, gap), or one row of tail below.
+            void Accented(char c, char letter, params string[] accent)
+            {
+                string[] baseRows = shapes.Find(shape => shape.c == letter).rows;
+                var rows = new List<string>(accent);
+                rows.Add(new string(' ', baseRows[0].Length));
+                rows.AddRange(baseRows);
+                shapes.Add((c, accent.Length + 1, rows.ToArray()));
+            }
+            void Tailed(char c, char letter, string tail)
+            {
+                var rows = new List<string>(shapes.Find(shape => shape.c == letter).rows) { tail };
+                shapes.Add((c, 0, rows.ToArray()));
+            }
 
             Add('A', " ### ", "#   #", "#   #", "#####", "#   #", "#   #", "#   #");
             Add('B', "#### ", "#   #", "#   #", "#### ", "#   #", "#   #", "#### ");
@@ -248,6 +280,14 @@ namespace AntColony
             Add('|', "#", "#", "#", "#", "#", "#", "#");
             Add('#', " # # ", "#####", " # # ", " # # ", "#####", " # # ", "     ");
             Add('&', " ##  ", "#  # ", " ##  ", " # # ", "#   #", "#  # ", " ## #");
+
+            // Turkish.
+            Accented('Ö', 'O', " # # ");
+            Accented('Ü', 'U', " # # ");
+            Accented('İ', 'I', " # ");
+            Accented('Ğ', 'G', " # # ", "  #  ");
+            Tailed('Ç', 'C', "  #  ");
+            Tailed('Ş', 'S', "  #  ");
             return shapes;
         }
     }
