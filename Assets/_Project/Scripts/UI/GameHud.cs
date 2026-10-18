@@ -337,6 +337,13 @@ namespace AntColony
             iconPixel = PixelFont.Snap(1.5f, scale);
 
             bool repaint = Event.current.type == EventType.Repaint;
+            if (game.Intro != null && game.Intro.IsPlaying)
+            {
+                // The intro shows no HUD: only letterbox bars, its captions and fades, and how to skip it.
+                if (repaint) DrawIntro(screenWidth, game.Intro);
+                GUI.matrix = previousMatrix;
+                return;
+            }
             if (repaint)
             {
                 anyButtonHovered = false;
@@ -365,6 +372,31 @@ namespace AntColony
                 hoverParticles?.Draw();
             }
             GUI.matrix = previousMatrix;
+        }
+
+        /// <summary>The intro's frame: black bars top and bottom, the fade, a caption and a small "skip" hint.</summary>
+        void DrawIntro(float screenWidth, IntroCutscene intro)
+        {
+            float bar = Mathf.Round(screenHeight * 0.1f);
+            if (intro.Blackness > 0f)
+            {
+                Color previous = GUI.color;
+                GUI.color = new Color(0f, 0f, 0f, intro.Blackness);
+                GUI.DrawTexture(new Rect(0f, 0f, screenWidth, screenHeight), Texture2D.whiteTexture);
+                GUI.color = previous;
+            }
+            FillRect(new Rect(0f, 0f, screenWidth, bar), Color.black);
+            FillRect(new Rect(0f, screenHeight - bar, screenWidth, bar), Color.black);
+
+            if (!string.IsNullOrEmpty(intro.Caption) && intro.CaptionAlpha > 0f)
+            {
+                Color colour = Cream;
+                colour.a = intro.CaptionAlpha;
+                Text(new Rect(0f, screenHeight - bar, screenWidth, bar), intro.Caption, colour, medium, TextAnchor.MiddleCenter);
+            }
+            Color hint = Muted;
+            hint.a = 0.8f;
+            Text(new Rect(0f, bar * 0.5f - 7f, screenWidth - Margin * 2f, 14f), "Esc / Space / click: skip", hint, small, TextAnchor.MiddleRight);
         }
 
         void DrawScreens(float screenWidth, float scale)

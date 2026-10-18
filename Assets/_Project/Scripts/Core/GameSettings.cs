@@ -205,6 +205,10 @@ namespace AntColony
         [Tooltip("How much bigger a big pile looks per extra share of food (0.12: big piles 12% bigger, huge 24%). 0 = all the same size.")]
         [Range(0f, 0.5f)] public float foodBigPileGrowth = 0.12f;
 
+        [Header("Intro")]
+        [Tooltip("Play the short story (the queen flies in, digs the nest and lays her first eggs) at the start of a new game.")]
+        public bool playIntro = true;
+
         [Header("Enemy waves")]
         public float firstWaveDelay = 310f;
         public float timeBetweenWaves = 75f;

@@ -34,6 +34,20 @@ namespace AntColony
         [Tooltip("Laying an egg: settle, squeeze, push (the egg shows), relax.")]
         public QueenFrame[] lay;
 
+        [Header("Intro (seen from above, on the meadow)")]
+        [Tooltip("Flying, wings beating.")]
+        public Sprite[] introFly;
+        [Tooltip("Landed, wings folded over her back.")]
+        public Sprite introLanded;
+        [Tooltip("Wings shed.")]
+        public Sprite introNoWings;
+        [Tooltip("Going head-first into her hole: less and less of her showing.")]
+        public Sprite[] introDig;
+        [Tooltip("The dirt mound with the hole she digs.")]
+        public Sprite introMound;
+        [Tooltip("A shed wing lying on the grass.")]
+        public Sprite introShedWing;
+
         [Header("Timing")]
         [Min(0.1f)] public float idleFps = 2f;
         [Tooltip("Walk frames per world unit travelled.")]

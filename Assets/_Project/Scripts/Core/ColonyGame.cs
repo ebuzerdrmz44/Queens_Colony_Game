@@ -90,6 +90,7 @@ namespace AntColony
         /// <summary>The Gather tool and the food piles marked with it.</summary>
         public GatherOrders Gather { get; private set; }
         public Tutorial Tutorial { get; private set; }
+        public IntroCutscene Intro { get; private set; }
         public BuildMode BuildMode { get; private set; }
         public NestTools NestTools { get; private set; }
         public Defenses Defenses { get; private set; }
@@ -137,6 +138,8 @@ namespace AntColony
             NestTools.Init(this);
             Tutorial = gameObject.AddComponent<Tutorial>();
             Tutorial.Init(this);
+            Intro = gameObject.AddComponent<IntroCutscene>();
+            Intro.Init(this);
 
             surfaceScene = GetOrCreateScene(SurfaceSceneName);
             nestScene = GetOrCreateScene(NestSceneName);
@@ -309,13 +312,16 @@ namespace AntColony
         }
 
         /// <summary>A fresh game. The tutorial runs only when <paramref name="withTutorial"/> asks for it.</summary>
-        public void StartNewGame(bool withTutorial = false)
+        /// <param name="playIntro">Show the intro story first (if it's on in the settings); tests skip it.</param>
+        public void StartNewGame(bool withTutorial = false, bool playIntro = true)
         {
             Restart();
             InMainMenu = false;
             if (withTutorial) Tutorial.Begin();
             // The confirmed new game replaces the single save slot with a recoverable starting point.
             if (!SaveGame()) ShowMessage("New game started, but saving failed. The previous save was kept.");
+            // The tutorial's first pop-up waits behind the intro (the HUD hides it until the story ends).
+            if (playIntro && settings.playIntro) Intro.Play(null);
         }
 
         /// <summary>Writes the running game to the save file (one slot). False if it couldn't.</summary>
@@ -390,7 +396,7 @@ namespace AntColony
         /// </summary>
         public void SetUpBossTest()
         {
-            StartNewGame();
+            StartNewGame(playIntro: false);
             Tutorial.Stop();
 
             Colony.AddFood(Colony.StorageCapacity, foraged: false);
@@ -424,6 +430,7 @@ namespace AntColony
         /// <summary>Throws the current world away and builds a fresh one.</summary>
         public void Restart()
         {
+            if (Intro != null && Intro.IsPlaying) Intro.Skip();
             // Deactivate first: Destroy only happens at the end of the frame, and the old ants and
             // enemies must not run any more code against the new world in the meantime.
             Selection.Clear();

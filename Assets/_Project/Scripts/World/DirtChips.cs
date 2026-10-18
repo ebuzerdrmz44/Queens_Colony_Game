@@ -48,7 +48,9 @@ namespace AntColony
 
         void Update()
         {
-            age += Time.deltaTime;
+            // Real time while the game is frozen (e.g. during the intro), so the chips still fly.
+            float deltaTime = Time.timeScale > 0f ? Time.deltaTime : Time.unscaledDeltaTime;
+            age += deltaTime;
             if (age >= Lifetime)
             {
                 Destroy(gameObject);
@@ -58,8 +60,8 @@ namespace AntColony
             float fade = 1f - age / Lifetime;
             for (int i = 0; i < chips.Length; i++)
             {
-                velocities[i].y -= Gravity * Time.deltaTime;
-                chips[i].localPosition += (Vector3)(velocities[i] * Time.deltaTime);
+                velocities[i].y -= Gravity * deltaTime;
+                chips[i].localPosition += (Vector3)(velocities[i] * deltaTime);
                 Color color = renderers[i].color;
                 color.a = fade;
                 renderers[i].color = color;

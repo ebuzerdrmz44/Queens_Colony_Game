@@ -115,7 +115,7 @@ namespace AntColony
                     if (Walk())
                     {
                         state = State.Home;
-                        animator.Face(Random.value < 0.5f ? Vector2.left : Vector2.right);
+                        animator.Face(Vector2.right); // home again: head back over the middle of the nest
                     }
                     break;
             }

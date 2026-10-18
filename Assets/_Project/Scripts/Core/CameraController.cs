@@ -85,6 +85,24 @@ namespace AntColony
             shakeStepLeft = 0f;
         }
 
+        /// <summary>While true (the intro), the camera stays where <see cref="CinematicShot"/> puts it.</summary>
+        public bool Cinematic { get; set; }
+
+        /// <summary>Puts the camera at a point with a zoom at once (for the intro).</summary>
+        public void CinematicShot(Vector2 point, float size)
+        {
+            transform.position = new Vector3(point.x, point.y, transform.position.z);
+            Camera.orthographicSize = size;
+        }
+
+        /// <summary>Jumps straight to a view (surface or nest), without the fade.</summary>
+        public void ShowView(CameraView view)
+        {
+            switching = false;
+            Fade = 0f;
+            CutTo(view);
+        }
+
         /// <summary>Glides the surface view to look at <paramref name="point"/>.</summary>
         public void FocusSurface(Vector2 point)
         {
@@ -120,7 +138,7 @@ namespace AntColony
 
         void LateUpdate()
         {
-            if (game == null || game.Nest == null) return;
+            if (game == null || game.Nest == null || Cinematic) return;
 
             transform.position -= shakeOffset; // follow from the steady spot
             UpdateFade();

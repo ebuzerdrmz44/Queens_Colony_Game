@@ -100,5 +100,9 @@ namespace AntColony
         public WaveSpawner Waves=new WaveSpawner();
         public void SetTutorialPause(bool value) { TutorialPaused=value; }
         public void ShowMessage(string message) { }
+        public IntroStub Intro=new IntroStub();
+        public IntroSettings settings=new IntroSettings();
     }
+    public class IntroStub { public int Plays; public void Play(System.Action finished) { Plays++; } }
+    public class IntroSettings { public bool playIntro=true; }
 }

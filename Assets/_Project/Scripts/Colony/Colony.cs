@@ -26,6 +26,15 @@ namespace AntColony
         float food;
         float eggTimer;
         Queen queen;
+
+        /// <summary>The queen's object (hidden and shown by the intro).</summary>
+        public Transform QueenTransform => queen != null ? queen.transform : null;
+
+        /// <summary>
+        /// How far the queen's head is in front of the middle of her body (she faces right; the head is the front
+        /// quarter of the art), so she can be placed with her head on a spot.
+        /// </summary>
+        public static float QueenHeadOffset(SpriteRenderer body) => body != null ? body.bounds.size.x * 0.26f : 0f;
         float starvationTick;
 
         public IReadOnlyList<Ant> Ants => ants;
@@ -586,6 +595,8 @@ namespace AntColony
             queen.position = game.Nest.FootprintBottomCenter(chamber.Origin, chamber.Size) + new Vector2(0f, 0.08f);
 
             SpriteRenderer body = UnitBody.FindOrCreate(game.Art, queen, game.Art.Ant, QueenWidth, SortingOrder.Queen, QueenTint);
+            // She faces right with her head at the middle of the nest (over the shaft), her abdomen behind her.
+            queen.position -= new Vector3(QueenHeadOffset(body), 0f, 0f);
 
             // She never walks, but she breathes and looks about. A UnitAnimator on the queen prefab keeps its own settings.
             bool tuned = queen.TryGetComponent(out UnitAnimator _);

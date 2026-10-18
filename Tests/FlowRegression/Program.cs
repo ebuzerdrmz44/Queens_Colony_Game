@@ -82,6 +82,8 @@ class Program
             g=new ColonyGame();g.Tutorial=new Tutorial();g.Tutorial.Init(g);g.StartNewGame();
             Check(!g.Tutorial.IsActive && g.Saves==1,"New game never auto-starts an unfinished tutorial");
             g.StartNewGame(true);Check(g.Tutorial.IsActive,"Explicit Tutorial still starts the guide");
+            int introPlays=g.Intro.Plays;g.StartNewGame(playIntro:false);Check(g.Intro.Plays==introPlays,"A new game started without the intro skips it");
+            g.StartNewGame();Check(g.Intro.Plays==introPlays+1,"A new game plays the intro story");
             g.StartNewGame();Check(!g.Tutorial.IsActive && !g.TutorialPaused,"New game clears a previous active tutorial");
 
             new SaveData {food=11}.WriteToDisk();

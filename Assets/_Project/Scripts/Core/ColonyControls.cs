@@ -35,6 +35,15 @@ namespace AntColony
                 return;
             }
 
+            if (game.Intro != null && game.Intro.IsPlaying)
+            {
+                // The intro takes no other input; any of these skips it.
+                bool skip = (keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
+                            || (mouse != null && mouse.leftButton.wasPressedThisFrame);
+                if (skip) game.Intro.Skip();
+                return;
+            }
+
 #if UNITY_EDITOR
             if (keyboard != null && keyboard.f8Key.wasPressedThisFrame)
             {
