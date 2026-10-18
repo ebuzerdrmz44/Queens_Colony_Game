@@ -5,7 +5,7 @@ using UnityEngine;
 namespace AntColony
 {
     /// <summary>
-    /// The short story at the start of a new game (about 20 s, skippable with Esc, Space, Enter or a click):
+    /// The short story at the start of a new game (about 23 s, skippable with Esc, Space, Enter or a click):
     /// 1. A young queen flies in over the meadow (wings flapping, her shadow on the grass), lands on the spot of the
     ///    future ant hill and digs in, sinking out of sight in a spray of dirt.
     /// 2. Underground she digs her way down the shaft and hollows out her chamber, the soil falling away as she goes,
@@ -29,7 +29,8 @@ namespace AntColony
         const float LaterHoldEnd = 19.5f;
         const float LaterFadeInEnd = 20.1f;
         const float ShowColonyEnd = 21.5f;
-        const float Total = 22.1f;
+        const float HomeCutEnd = 22.1f;
+        const float Total = 22.8f;
 
         // The top-down queen art: 40 px wide, her middle at x 20, the tip of her head at x 37;
         // the dig-in frames have this many pixels of her front gone into the hole.
@@ -79,6 +80,7 @@ namespace AntColony
         List<Vector2Int> chamberTiles;
         List<Vector2Int> shaftTiles;
         bool inNest;
+        bool returnedToSurface;
         int eggsLaid;
 
         public bool IsPlaying { get; private set; }
@@ -96,6 +98,10 @@ namespace AntColony
             time = 0f;
             eggsLaid = 0;
             inNest = false;
+            returnedToSurface = false;
+            Blackness = 1f;
+            Caption = "";
+            CaptionAlpha = 0f;
             IsPlaying = true;
             Time.timeScale = 0f;
 
@@ -139,6 +145,8 @@ namespace AntColony
         }
 
         /// <summary>Ends the intro at once (the rest of the story is skipped).</summary>
+        public bool CanSkip => IsPlaying && time >= 0.6f;
+
         public void Skip()
         {
             if (IsPlaying) Finish();
@@ -168,7 +176,9 @@ namespace AntColony
         {
             Blackness = time < 0.6f ? 1f - time / 0.6f : time > DigEnd ? (time - DigEnd) / (FadeOutEnd - DigEnd) : 0f;
             string caption = time < SettleEnd ? "A young queen searches for a home..." : "...and digs in.";
-            SetCaption(caption, time, 0.4f, DigEnd);
+            float captionStart = time < SettleEnd ? 0f : SettleEnd;
+            float captionEnd = time < SettleEnd ? SettleEnd : DigEnd;
+            SetCaption(caption, time - captionStart, 0.18f, captionEnd - captionStart);
 
             const float pixel = 1f / PixelArt.PixelsPerUnit;
             Vector2 headStop = landAt + new Vector2(-0.55f, 0f);        // at the hole's near rim
@@ -372,10 +382,12 @@ namespace AntColony
                 queenActor.flipX = false;
                 // Where she'll rest when the game begins: facing right, head over the middle of the nest.
                 PlaceByHead(new Vector2(chamberFloor.x, chamberFloor.y + StandHeight()), 0f);
-                float t = (time - ChamberEnd) / (EggsEnd - ChamberEnd);
-                int frame = Mathf.FloorToInt(t * 3f * 4f) % 4;
+                float cycles = Mathf.Clamp01((time - ChamberEnd) / (EggsEnd - ChamberEnd)) * 3f;
+                float phase = cycles - Mathf.Floor(cycles);
+                // Settle, strain, release, recover. The egg appears on the release frame.
+                int frame = cycles >= 3f ? 3 : Mathf.Min(3, Mathf.FloorToInt(phase * 4f));
                 queenActor.sprite = FrameSprite(layFrames ?? flyFrames, frame, 0);
-                int due = Mathf.Min(3, Mathf.FloorToInt(t * 3f + 0.35f));
+                int due = Mathf.Min(3, Mathf.FloorToInt(cycles + 0.5f));
                 while (eggsLaid < due) LayEgg();
                 game.CameraRig.CinematicShot(chamberFloor + new Vector2(0f, 1.2f), NestZoom);
                 Blackness = time > EggsEnd ? Mathf.Clamp01((time - EggsEnd) / (LaterFadeOutEnd - EggsEnd)) : 0f;
@@ -418,8 +430,26 @@ namespace AntColony
             if (time < LaterHoldEnd) Blackness = 1f;
             else if (time < LaterFadeInEnd) Blackness = 1f - (time - LaterHoldEnd) / (LaterFadeInEnd - LaterHoldEnd);
             else if (time < ShowColonyEnd) Blackness = 0f;
-            else Blackness = Mathf.Clamp01((time - ShowColonyEnd) / (Total - ShowColonyEnd));
-            game.CameraRig.CinematicShot(chamberFloor + new Vector2(0f, 2.2f), NestZoom + 0.8f);
+            else if (time < HomeCutEnd) Blackness = Mathf.Clamp01((time - ShowColonyEnd) / (HomeCutEnd - ShowColonyEnd));
+            else
+            {
+                // Change worlds under full black, then reveal the playable entrance before returning control.
+                if (!returnedToSurface)
+                {
+                    game.CameraRig.ShowView(CameraView.Surface);
+                    returnedToSurface = true;
+                }
+                Blackness = 1f - Mathf.Clamp01((time - HomeCutEnd) / (Total - HomeCutEnd));
+                Caption = "Your colony begins.";
+                CaptionAlpha = 1f - Blackness;
+            }
+            if (returnedToSurface)
+                game.CameraRig.CinematicShot(landAt, 7f);
+            else
+            {
+                float pullBack = Mathf.SmoothStep(0f, 1f, (time - LaterHoldEnd) / (ShowColonyEnd - LaterHoldEnd));
+                game.CameraRig.CinematicShot(chamberFloor + new Vector2(0f, Mathf.Lerp(1.2f, 2.2f, pullBack)), Mathf.Lerp(NestZoom, NestZoom + 0.8f, pullBack));
+            }
         }
 
         // ---------- Hiding and revealing the starting colony ----------
@@ -610,7 +640,7 @@ namespace AntColony
         Sprite FrameSprite(QueenAnimator.QueenFrame[] frames, int index, int wing)
         {
             if (frames == null || frames.Length == 0) return fallbackQueen;
-            Sprite sprite = frames[((index % frames.Length) + frames.Length) % frames.Length].Get(wing);
+            Sprite sprite = frames[((index % frames.Length) + frames.Length) % frames.Length]?.Get(wing);
             return sprite != null ? sprite : fallbackQueen;
         }
     }

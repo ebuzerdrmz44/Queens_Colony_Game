@@ -40,7 +40,7 @@ namespace AntColony
                 // The intro takes no other input; any of these skips it.
                 bool skip = (keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
                             || (mouse != null && mouse.leftButton.wasPressedThisFrame);
-                if (skip) game.Intro.Skip();
+                if (skip && game.Intro.CanSkip) game.Intro.Skip();
                 return;
             }
 

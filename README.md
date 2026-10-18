@@ -100,3 +100,12 @@ right-click to move or attack, E selects all soldiers, Q halves the group.
 Music portrait variants live in `Assets/_Project/Art/UI/MusicPortraits`. Each UI Skin portrait has
 an optional `musicImage` used only by the player; wave reports use its original `image`.
 If the variant is empty, music falls back to the original portrait.
+
+### Opening story
+
+New games can show the queen finding a home, folding her wings, digging a chamber,
+and laying her first eggs. Captions follow each story beat; eggs appear on the release
+pose. The ending reveals the surface before handing control back to the player.
+Esc, Space, Enter or a click skips the story after a short 0.6-second input guard,
+so the click that starts a game cannot immediately dismiss it. The simulation and
+wave timer stay frozen throughout the story.

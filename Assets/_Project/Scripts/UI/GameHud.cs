@@ -395,7 +395,7 @@ namespace AntColony
                 Text(new Rect(0f, screenHeight - bar, screenWidth, bar), intro.Caption, colour, medium, TextAnchor.MiddleCenter);
             }
             Color hint = Muted;
-            hint.a = 0.8f;
+            hint.a = intro.CanSkip ? 0.8f : 0f;
             Text(new Rect(0f, bar * 0.5f - 7f, screenWidth - Margin * 2f, 14f), "Esc / Space / click: skip", hint, small, TextAnchor.MiddleRight);
         }
 
