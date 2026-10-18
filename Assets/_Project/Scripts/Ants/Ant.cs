@@ -98,6 +98,10 @@ namespace AntColony
         public Sprite SideIcon => Still(sideView);
         /// <summary>A still of this ant's own top-down art; null if it has none.</summary>
         public Sprite TopIcon => Still(topView);
+        /// <summary>This ant's own side-view walk frames (also works on the prefab asset); null if it has none.</summary>
+        public Sprite[] SideWalk => sideView != null && sideView.walk != null && System.Array.Exists(sideView.walk, sprite => sprite != null) ? sideView.walk : null;
+        /// <summary>True if <see cref="SideWalk"/> looks to the left instead of to the right.</summary>
+        public bool SideViewFacesLeft => sideViewFacesLeft;
 
         static Sprite Still(CreatureSprites sprites)
         {

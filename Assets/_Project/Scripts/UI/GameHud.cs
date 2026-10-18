@@ -2643,6 +2643,10 @@ namespace AntColony
                 y = top + 140f;
             }
 
+            float stackBottom = y + buttonHeight * 5f + gap * 4f;
+            float ground = DrawMenuQueen(x, y, stackBottom);
+            DrawMenuAnts(x + buttonWidth + MenuQueenGap * 2f, screenWidth - Margin * 2f, ground);
+
             float half = (buttonWidth - gap) * 0.5f;
             if (MenuButton(new Rect(x, y, half, buttonHeight), "New game")) RequestNewGame();
             if (MenuButton(new Rect(x + half + gap, y, half, buttonHeight), "Tutorial")) RequestNewGame(tutorial: true);
@@ -2659,6 +2663,165 @@ namespace AntColony
             Text(new Rect(0f, y, screenWidth, 14f), "In game:  F5 save   F9 load   Esc pause", Muted, small, TextAnchor.UpperCenter);
             if (game.Message.Length > 0 && game.MessageVisibility > 0f)
                 Text(new Rect(0f, y + 22f, screenWidth, 14f), game.Message, Bad, small, TextAnchor.UpperCenter);
+        }
+
+        /// <summary>How wide the queen beside the title menu may be, in UI units (she shrinks on narrow screens).</summary>
+        const float MenuQueenWidth = 252f;
+        /// <summary>Space between the queen's image and the menu buttons, in UI units (her art has some empty space on that side too).</summary>
+        const float MenuQueenGap = 12f;
+        /// <summary>Two wing beats: half, up, half, rest, twice (as in <see cref="QueenAnimator"/>).</summary>
+        static readonly int[] MenuQueenFlap = { 1, 2, 1, 0, 1, 2, 1, 0 };
+
+        /// <summary>
+        /// The queen beside the title menu, left of the buttons and facing them, standing on a small shadow. She plays
+        /// her own breathing idle from her prefab and beats her wings every few seconds. Scaled by whole screen pixels so
+        /// the pixel art stays crisp; skipped if there is no room for her or no queen art.
+        /// Returns the ground line she stands on (where the menu's ants walk too).
+        /// </summary>
+        float DrawMenuQueen(float buttonsLeft, float stackTop, float stackBottom)
+        {
+            float fallbackGround = Mathf.Round(((stackTop + stackBottom) * 0.5f + 66f) * guiScale) / guiScale;
+            if (Event.current.type != EventType.Repaint) return fallbackGround;
+            Sprite sprite = MenuQueenSprite(Time.unscaledTime);
+            if (sprite == null) return fallbackGround;
+
+            Rect spriteRect = sprite.rect;
+            float right = buttonsLeft - MenuQueenGap;
+            float room = Mathf.Min(MenuQueenWidth, right - Margin * 2f);
+            int screenPixels = Mathf.FloorToInt(room * guiScale / spriteRect.width);
+            if (screenPixels < 2) return fallbackGround;
+            float pixel = screenPixels / guiScale;
+
+            var size = new Vector2(spriteRect.width, spriteRect.height) * pixel;
+            float left = Mathf.Round((right - size.x) * guiScale) / guiScale;
+            float top = Mathf.Round(((stackTop + stackBottom) * 0.5f - size.y * 0.5f) * guiScale) / guiScale;
+            var destination = new Rect(left, top, size.x, size.y);
+
+            // A stepped oval shadow under her feet, centred on her body (her frames leave empty columns on the right).
+            Color previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.35f);
+            float centerX = destination.x + Mathf.Round(spriteRect.width * 0.44f) * pixel;
+            float feet = destination.yMax - pixel;
+            float wide = Mathf.Round(size.x * 0.84f / pixel) * pixel;
+            float narrow = Mathf.Round(size.x * 0.62f / pixel) * pixel;
+            GUI.DrawTexture(new Rect(centerX - narrow * 0.5f, feet - pixel, narrow, pixel), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX - wide * 0.5f, feet, wide, pixel * 2f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX - narrow * 0.5f, feet + pixel * 2f, narrow, pixel), Texture2D.whiteTexture);
+
+            Texture texture = sprite.texture;
+            var uv = new Rect(spriteRect.x / texture.width, spriteRect.y / texture.height,
+                spriteRect.width / texture.width, spriteRect.height / texture.height);
+            GUI.color = Color.white;
+            GUI.DrawTextureWithTexCoords(destination, texture, uv);
+            GUI.color = previous;
+            return destination.yMax;
+        }
+
+        /// <summary>One ant walking to and fro beside the title menu: its caste, speed (UI units per second at a 5-unit pixel), rest at each end, head start.</summary>
+        static readonly (AntRole role, float speed, float rest, float phase)[] MenuAnts =
+        {
+            (AntRole.Worker, 38f, 1.1f, 0f),
+            (AntRole.Builder, 30f, 1.8f, 6.3f),
+            (AntRole.Soldier, 46f, 0.7f, 2.4f),
+            (AntRole.Spitter, 34f, 1.4f, 9.1f),
+        };
+
+        /// <summary>
+        /// The queen's young walking to and fro right of the title menu's buttons, on the queen's ground line. Each ant
+        /// walks its own pace and rests at the ends; they sit a few pixels apart front to back, so passing looks natural.
+        /// Skipped if the strip is too narrow.
+        /// </summary>
+        void DrawMenuAnts(float stripLeft, float stripRight, float ground)
+        {
+            if (Event.current.type != EventType.Repaint || game.Prefabs == null) return;
+
+            int screenPixels = Mathf.Max(2, Mathf.RoundToInt(5f * guiScale));
+            float pixel = screenPixels / guiScale;
+            float time = Time.unscaledTime;
+            Color previous = GUI.color;
+
+            // Back to front: later ants stand a little lower, i.e. nearer.
+            for (int i = 0; i < MenuAnts.Length; i++)
+            {
+                (AntRole role, float speed, float rest, float phase) = MenuAnts[i];
+                Ant prefab = game.Prefabs.AntFor(role);
+                Sprite[] frames = prefab != null ? prefab.SideWalk : null;
+                bool facesLeft = prefab != null && prefab.SideViewFacesLeft;
+                Color tint = Color.white;
+                if (frames == null)
+                {
+                    frames = game.Art.AntSide.Walk;
+                    facesLeft = game.Art.AntSideFacesLeft;
+                    tint = CasteArt(role).tint;
+                }
+                Sprite still = frames.Length > 1 && frames[1] != null ? frames[1] : System.Array.Find(frames, s => s != null);
+                if (still == null) continue;
+
+                Rect stillRect = still.rect;
+                var size = new Vector2(stillRect.width, stillRect.height) * pixel;
+                float length = stripRight - stripLeft - size.x;
+                if (length < size.x) break;
+
+                // To the right, rest, back to the left, rest.
+                float pace = speed * pixel / 5f;
+                float walk = length / pace;
+                float t = Mathf.Repeat(time + phase, 2f * (walk + rest));
+                float along, travelled = 0f;
+                bool moving = true, goingRight = true;
+                if (t < walk) { along = t * pace; travelled = along; }
+                else if (t < walk + rest) { along = length; moving = false; }
+                else if (t < walk * 2f + rest) { travelled = (t - walk - rest) * pace; along = length - travelled; goingRight = false; }
+                else { along = 0f; moving = false; goingRight = false; }
+
+                Sprite sprite = still;
+                if (moving)
+                {
+                    int frame = Mathf.FloorToInt(travelled / (pixel * 3f)) % frames.Length;
+                    if (frames[frame] != null) sprite = frames[frame];
+                }
+
+                float feet = ground + i * pixel * 3f;
+                float left = Mathf.Round((stripLeft + along) * guiScale) / guiScale;
+                float top = Mathf.Round((feet - size.y) * guiScale) / guiScale;
+                var destination = new Rect(left, top, size.x, size.y);
+
+                // A small stepped shadow under its legs.
+                GUI.color = new Color(0f, 0f, 0f, 0.3f);
+                float shadow = Mathf.Round(stillRect.width * 0.75f) * pixel;
+                GUI.DrawTexture(new Rect(destination.center.x - shadow * 0.5f, destination.yMax - pixel, shadow, pixel * 2f), Texture2D.whiteTexture);
+
+                Rect spriteRect = sprite.rect;
+                Texture texture = sprite.texture;
+                var uv = new Rect(spriteRect.x / texture.width, spriteRect.y / texture.height,
+                    spriteRect.width / texture.width, spriteRect.height / texture.height);
+                // Turn the ant to face the way it walks (or the way it last walked, while resting).
+                if (goingRight == facesLeft) uv = new Rect(uv.xMax, uv.y, -uv.width, uv.height);
+                GUI.color = tint;
+                GUI.DrawTextureWithTexCoords(destination, texture, uv);
+            }
+            GUI.color = previous;
+        }
+
+        /// <summary>The queen's idle frame at <paramref name="time"/>, with a wing flap every few seconds; her plain sprite without frames.</summary>
+        Sprite MenuQueenSprite(float time)
+        {
+            GameObject prefab = game.Prefabs != null ? game.Prefabs.queen : null;
+            if (prefab == null) return null;
+
+            if (prefab.TryGetComponent(out QueenAnimator art) && art.idle != null && art.idle.Length > 0)
+            {
+                int wing = 0;
+                float flapEvery = Mathf.Max(0.5f, (art.flapEveryMin + Mathf.Max(art.flapEveryMin, art.flapEveryMax)) * 0.5f);
+                int flapStep = Mathf.FloorToInt(Mathf.Repeat(time, flapEvery) * art.flapFps);
+                if (flapStep < MenuQueenFlap.Length) wing = MenuQueenFlap[flapStep];
+
+                int frame = Mathf.FloorToInt(time * art.idleFps) % art.idle.Length;
+                Sprite sprite = art.idle[frame]?.Get(wing);
+                if (sprite != null) return sprite;
+            }
+
+            SpriteRenderer body = prefab.GetComponentInChildren<SpriteRenderer>();
+            return body != null ? body.sprite : null;
         }
 
         void DrawConfirmation(float screenWidth)
