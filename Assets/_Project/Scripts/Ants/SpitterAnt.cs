@@ -48,8 +48,9 @@ namespace AntColony
 
             BodyAnimator.PlayAttack();
             Vector2 mouth = Position - away * (BodyWidth * 0.45f);
-            Game.PlayEffect(EffectKind.SpitterSpit, mouth);
-            AcidShot.Fire(Game, mouth, enemy, settings.spitterDamage, EffectKind.SpitterAcidHit, width: 0.22f, speed: 7f);
+            Game.PlayEffect(EffectKind.SpitterSpit, mouth, -away); // sprays toward the enemy
+            AcidShot.Fire(Game, mouth, enemy, settings.spitterDamage, EffectKind.SpitterAcidHit, width: 0.22f, speed: 7f,
+                trailEffect: EffectKind.SpitterShotTrail, prefab: Game.Prefabs.spitterShot);
             attackCooldownLeft = settings.spitterCooldown;
         }
     }

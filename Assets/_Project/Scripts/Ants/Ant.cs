@@ -3,6 +3,17 @@ using UnityEngine;
 
 namespace AntColony
 {
+    /// <summary>What an ant is up to, in one word (shown when the mouse is over it).</summary>
+    public enum AntState
+    {
+        Idle,
+        Working,
+        Fighting,
+        Guarding,
+        Moving,
+        Fleeing,
+    }
+
     public enum AntRole
     {
         Worker,
@@ -78,6 +89,23 @@ namespace AntColony
         /// <summary>True while the ant is doing a job (not resting or waiting for work).</summary>
         public virtual bool IsBusy => false;
         public bool IsFleeing => isFleeing;
+
+        /// <summary>The ant's own name, picked when it hatches.</summary>
+        public string Name { get; private set; } = "";
+        /// <summary>What it's up to in one word (shown when the mouse is over it).</summary>
+        public virtual AntState Status => isFleeing ? AntState.Fleeing : IsBusy ? AntState.Working : AntState.Idle;
+        /// <summary>What it's doing right now, in a few words (e.g. "carrying food home"); empty if nothing.</summary>
+        public virtual string Activity => isFleeing ? "running from an enemy" : "";
+        /// <summary>The middle of the body in the world (the side-view body stands on <see cref="Position"/>).</summary>
+        public Vector2 BodyCenter => IsOnSurface ? Position : Position + new Vector2(0f, BodyHeight * 0.5f);
+
+        static readonly string[] Names =
+        {
+            "Pip", "Hazel", "Bramble", "Acorn", "Clover", "Nutmeg", "Juniper", "Maple", "Thistle", "Fern",
+            "Rowan", "Sorrel", "Pebble", "Moss", "Birch", "Willow", "Tansy", "Burdock", "Chestnut", "Sage",
+            "Cricket", "Twig", "Barley", "Quill", "Ember", "Rusty", "Hickory", "Poppy", "Basil", "Fennel",
+            "Aspen", "Bean", "Cedar", "Dill", "Elm", "Flint", "Ginger", "Holly", "Ivy", "Kip",
+        };
         public Vector2 Position => transform.position;
         /// <summary>Size of the body for crowding and reach, in world units.</summary>
         public float Radius => BodyWidth * 0.38f;
@@ -106,6 +134,7 @@ namespace AntColony
         {
             Game = game;
             transform.position = spawnPoint;
+            if (string.IsNullOrEmpty(Name)) Name = Names[Random.Range(0, Names.Length)];
             wanderSeed = Random.value * 100f;
 
             bool customSide = sideView != null && sideView.walk != null && System.Array.Exists(sideView.walk, sprite => sprite != null);
@@ -207,6 +236,38 @@ namespace AntColony
             return true;
         }
 
+        /// <summary>Corners of a route count as reached this close.</summary>
+        const float CornerReach = 0.3f;
+        /// <summary>Barely moving for this long while following a route means stuck: plan a new route.</summary>
+        const float StuckTime = 1.2f;
+        const float StuckMove = 0.25f;
+        Vector2 stuckCheckPoint;
+        float stuckTimer;
+
+        /// <summary>
+        /// True (and a fresh route is planned from here) if the ant has barely moved for a while, e.g. pinned against
+        /// a wall that was built after it planned its route, or shoved into a corner by the crowd.
+        /// </summary>
+        bool CheckStuck()
+        {
+            if (Vector2.Distance(Position, stuckCheckPoint) > StuckMove)
+            {
+                stuckCheckPoint = Position;
+                stuckTimer = 0f;
+                return false;
+            }
+
+            stuckTimer += Time.deltaTime;
+            if (stuckTimer < StuckTime || !destination.HasValue) return false;
+
+            stuckTimer = 0f;
+            stuckCheckPoint = Position;
+            Vector2 goal = destination.Value;
+            transform.position = Game.Surface.PushOut(Position, Radius, includeStructures: true);
+            GoTo(goal);
+            return true;
+        }
+
         /// <summary>Puts the ant somewhere else at once (e.g. out of a tunnel that was filled in) and forgets its route.</summary>
         public void Relocate(Vector2 position)
         {
@@ -218,8 +279,15 @@ namespace AntColony
         protected bool FollowRoute()
         {
             if (route.Count == 0) return true;
+            if (IsOnSurface && CheckStuck()) return false;
 
             Waypoint next = route.Peek();
+            // A corner on the way counts as reached when close (the crowd nudges ants, so they rarely land exactly on it).
+            if (!next.ThroughEntrance && route.Count > 1 && Vector2.Distance(Position, next.Position) < CornerReach)
+            {
+                route.Dequeue();
+                return false;
+            }
             if (next.ThroughEntrance)
             {
                 PassThroughEntrance(next.Position);

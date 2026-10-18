@@ -355,6 +355,9 @@ MonoBehaviour:
     builder:
       larvaFood: 7
       larvaTime: 18
+    spitter:
+      larvaFood: 14
+      larvaTime: 28
     baseStorage: 60
     storageRoomCapacity: 40
     storageRoomCost: 12
@@ -372,6 +375,35 @@ MonoBehaviour:
     soldierAttackRange: 0.5
     soldierAttackCooldown: 0.8
     soldierGuardRadius: 6
+    spitterSpeed: 2.3
+    spitterHealth: 24
+    spitterDamage: 6
+    spitterRange: 4.5
+    spitterCooldown: 1.4
+    boss:
+      name: Red Ant Warlord
+      prefab: {fileID: 0}
+      kind: 2
+      firstWave: 999
+      speed: 0.55
+      health: 900
+      damage: 18
+      attackRange: 0.6
+      attackCooldown: 1.6
+      bodyWidth: 3.2
+      foodWhenKilled: 40
+    bossSummonEvery: 12
+    bossSummonCount: 2
+    bossWindUp: 1.2
+    bossQuakeEvery: 11
+    bossQuakeRadius: 4.5
+    bossQuakeDamage: 14
+    bossQuakeStructureDamage: 35
+    bossSpitEvery: 7
+    bossSpitRange: 9
+    bossSpitRadius: 1.8
+    bossSpitDamage: 30
+    bossShake: 0.35
     builderSpeed: 2
     builderHealth: 18
     repairPerSecond: 10
@@ -402,7 +434,7 @@ MonoBehaviour:
     foodClusterChance: 0.75
     foodClusterSpread: 2.6
     foodClusterSameKind: 0.7
-    firstWaveDelay: 10
+    firstWaveDelay: 150
     timeBetweenWaves: 75
     wavesToWin: 10
     enemiesInFirstWave: 2
@@ -449,7 +481,10 @@ MonoBehaviour:
     worker: {fileID: 912901624469830964, guid: 40df47659c2e237869bc66468f22c964, type: 3}
     soldier: {fileID: 6934668454931365837, guid: df35572651d6612048a70114413c2b34, type: 3}
     builder: {fileID: 3128155249703605076, guid: 2531e97e8f586ba6e9370f5af19e6c3b, type: 3}
+    spitter: {fileID: 0}
     queen: {fileID: 5064099301339140523, guid: 709dbb7c78c1747eba2f201e2eb4f8e5, type: 3}
+    spitterShot: {fileID: 1525674961110607309, guid: 2a801465feac248f5aa5efb0351bca4f, type: 3}
+    towerShot: {fileID: 0}
     wall: {fileID: 1937676091675791048, guid: 781891b286211775aa6fc726acba46ae, type: 3}
     tower: {fileID: 2191341822263777853, guid: dbec3cd3db7807acb8df6bafedbf95bb, type: 3}
     leaf: {fileID: 7858691253269003907, guid: 3e37f30145d325d61928c56dcbbe2b32, type: 3}
@@ -496,6 +531,17 @@ MonoBehaviour:
     roomBuilt: {fileID: 0}
     structureBuilt: {fileID: 0}
     structureDestroyed: {fileID: 0}
+    spitterSpit: {fileID: 0}
+    spitterAcidHit: {fileID: 0}
+    spitterShotTrail: {fileID: 0}
+    towerShotTrail: {fileID: 0}
+    bossArrived: {fileID: 0}
+    bossSummon: {fileID: 0}
+    bossDied: {fileID: 0}
+    bossQuake: {fileID: 0}
+    bossMegaSpit: {fileID: 0}
+    bossMegaSpitHit: {fileID: 0}
+    bossGlobTrail: {fileID: 0}
   uiSkin:
     panel: {fileID: 2800000, guid: 49a1606d702e4514c9968e55b0dba3d6, type: 3}
     panelBorder: {x: 230, y: 200, z: 150, w: 170}
@@ -525,6 +571,7 @@ MonoBehaviour:
     iconWorker: {fileID: 21300000, guid: 982f2c5dc4097709fad6e2ba59f2eea5, type: 3}
     iconSoldier: {fileID: 21300000, guid: 598ff9eb8773a144a961a164bf3a1222, type: 3}
     iconBuilder: {fileID: 21300000, guid: d4e891f418efc56f39f5a3f88ddcc774, type: 3}
+    iconSpitter: {fileID: 0}
     iconEgg: {fileID: 21300000, guid: 8b74f8857338640599373d4599c585d4, type: 3}
     iconEggHatching: {fileID: 21300000, guid: cb4663c1aa5d15739b86a5aa16505a0e, type: 3}
     buttonHoverParticles: {fileID: 3812709656321731882, guid: ba699473954a46bf08e1675327e11233, type: 3}
@@ -533,9 +580,9 @@ MonoBehaviour:
     frameScale: 0.32
   sound:
     masterVolume: 1
-    musicVolume: 0.66
+    musicVolume: 0.579
     eventMusicVolume: 0.8
-    effectsVolume: 0.8
+    effectsVolume: 0.427
     pausedMusicFraction: 0.4
     otherViewVolume: 0.15
     offScreenVolume: 0.45

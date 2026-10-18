@@ -114,8 +114,10 @@ namespace AntColony
         public AudioClip queenInDanger;
         [Tooltip("Queen-in-danger music starts below this fraction of her health...")]
         [Range(0f, 1f)] public float queenDangerBelow = 0.35f;
-        [Tooltip("...and stops once she is healed above this fraction.")]
+        [Tooltip("...and stops once she is healed above this fraction...")]
         [Range(0f, 1f)] public float queenSafeAbove = 0.55f;
+        [Tooltip("...or once nothing has hurt her for this many seconds.")]
+        [Min(1f)] public float queenDangerCalmSeconds = 8f;
         public AudioClip gameOver;
 
         [Header("Sound effects: interface")]

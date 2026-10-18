@@ -192,6 +192,16 @@ namespace AntColony
         public float foodClusterSpread = 2.6f;
         [Tooltip("Chance that a pile in a patch is the same kind as its neighbour (a leaf patch, a berry patch...).")]
         [Range(0f, 1f)] public float foodClusterSameKind = 0.7f;
+        [Tooltip("\"Near the nest\" means within this distance of the ant hill.")]
+        public float foodNearRadius = 14f;
+        [Tooltip("Share of new piles that appear near the nest (the rest anywhere on the meadow).")]
+        [Range(0f, 1f)] public float foodNearShare = 0.75f;
+        [Tooltip("At least this many piles are kept near the nest: if there are fewer, the next one appears there.")]
+        public int foodMinNearPiles = 4;
+        [Tooltip("Chance that a new pile is big (twice the food, drawn bigger).")]
+        [Range(0f, 1f)] public float foodBigPileChance = 0.3f;
+        [Tooltip("Chance that a new pile is huge (three times the food).")]
+        [Range(0f, 1f)] public float foodHugePileChance = 0.1f;
 
         [Header("Enemy waves")]
         public float firstWaveDelay = 310f;

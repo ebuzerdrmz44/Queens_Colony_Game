@@ -273,6 +273,8 @@ namespace AntColony
                 battleWave = -1;
                 waveClearedPending = false;
                 queenInDanger = false;
+                lastQueenHealth = -1f;
+                lastQueenHurt = -100f;
             }
 
             bool waveActive = waves != null && waves.IsWaveActive;
@@ -291,7 +293,7 @@ namespace AntColony
             if (game.InMainMenu) wanted = MusicMode.Menu;
             else if (game.State == GameState.Lost) wanted = MusicMode.GameOver;
             else if (game.State == GameState.Won) wanted = MusicMode.Won;
-            else if (queenInDanger) wanted = MusicMode.QueenDanger;
+            else if (queenInDanger && WaveMusic) wanted = MusicMode.QueenDanger;
             else if (waveActive) wanted = MusicMode.Battle;
             else if (waveClearedPending) wanted = MusicMode.WaveCleared;
             else if (mode == MusicMode.WaveCleared && EventBusy && WaveMusic) wanted = MusicMode.WaveCleared;
@@ -312,26 +314,41 @@ namespace AntColony
             return timeLeft > 0f && timeLeft <= settings.waveWarningLead && warnedForWave != waves.CurrentWave + 1;
         }
 
+        /// <summary>
+        /// The queen-in-danger music is for while she is actually being hurt: it starts when her health is low and she
+        /// was just hurt, and stops once she has healed past the safe line or hasn't been hurt for a while (she heals
+        /// slowly, so waiting for the safe line alone could keep it playing for minutes). Off with the wave music tick.
+        /// </summary>
         void UpdateQueenDanger()
         {
             Colony colony = game.Colony;
             if (colony == null || game.State != GameState.Playing || colony.QueenMaxHealth <= 0f)
             {
                 queenInDanger = false;
+                lastQueenHealth = -1f;
                 return;
             }
 
             float health = colony.QueenHealth / colony.QueenMaxHealth;
-            if (!queenInDanger && health < settings.queenDangerBelow)
+            if (lastQueenHealth >= 0f && health < lastQueenHealth - 0.0001f) lastQueenHurt = Time.time;
+            lastQueenHealth = health;
+            bool beingHurt = Time.time - lastQueenHurt < QueenHurtMemory;
+
+            if (!queenInDanger && health < settings.queenDangerBelow && beingHurt)
             {
                 queenInDanger = true;
                 Play(Sound.QueenAlarm);
             }
-            else if (queenInDanger && health > settings.queenSafeAbove)
+            else if (queenInDanger && (health > settings.queenSafeAbove || Time.time - lastQueenHurt > settings.queenDangerCalmSeconds))
             {
                 queenInDanger = false;
             }
         }
+
+        /// <summary>A hit this recent counts as "being hurt" for starting the danger music.</summary>
+        const float QueenHurtMemory = 3f;
+        float lastQueenHealth = -1f;
+        float lastQueenHurt = -100f;
 
         void Enter(MusicMode next, WaveSpawner waves)
         {

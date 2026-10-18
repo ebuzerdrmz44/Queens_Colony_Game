@@ -199,19 +199,73 @@ namespace AntColony
         {
             GameSettings settings = game.Settings;
             FoodType type = Random.value < settings.leafChance ? foodTypes[0] : foodTypes[Random.Range(1, foodTypes.Length)];
-            Vector2 position = game.Surface.RandomPoint(settings.foodMinDistanceFromNest);
+            bool fewNear = CountNearNest() < settings.foodMinNearPiles;
+            Vector2 position = fewNear || Random.value < settings.foodNearShare ? RandomPointNearNest() : game.Surface.RandomPoint(settings.foodMinDistanceFromNest);
 
-            if (sources.Count > 0 && Random.value < settings.foodClusterChance)
+            // Often the pile grows next to an existing one (piles nearer the nest are picked more), making patches.
+            if (!fewNear && sources.Count > 0 && Random.value < settings.foodClusterChance)
             {
-                FoodSource neighbour = sources[Random.Range(0, sources.Count)];
-                if (TryFindSpotNear(neighbour.Position, out Vector2 spot))
+                FoodSource neighbour = PickNeighbour();
+                if (neighbour != null && TryFindSpotNear(neighbour.Position, out Vector2 spot))
                 {
                     position = spot;
                     if (Random.value < settings.foodClusterSameKind && TryFindType(neighbour.name, out FoodType sameType)) type = sameType;
                 }
             }
 
-            SpawnFood(type.Name, type.Prefab, position, type.Sprite, type.Width, type.Trips, type.Kind, type.Load, upsideDown: false);
+            // Some piles are big or huge: more trips, drawn bigger.
+            float roll = Random.value;
+            int sizeFactor = roll < settings.foodHugePileChance ? 3 : roll < settings.foodHugePileChance + settings.foodBigPileChance ? 2 : 1;
+            SpawnFood(type.Name, type.Prefab, position, type.Sprite, type.Width, type.Trips * sizeFactor, type.Kind, type.Load, upsideDown: false);
+        }
+
+        int CountNearNest()
+        {
+            int count = 0;
+            float radius = game.Settings.foodNearRadius;
+            foreach (FoodSource food in sources)
+            {
+                if (Vector2.Distance(food.Position, game.Surface.EntrancePoint) <= radius) count++;
+            }
+            return count;
+        }
+
+        /// <summary>A free spot between the nest's food-free ring and <see cref="GameSettings.foodNearRadius"/>.</summary>
+        Vector2 RandomPointNearNest()
+        {
+            GameSettings settings = game.Settings;
+            Vector2 hill = game.Surface.EntrancePoint;
+            float min = settings.foodMinDistanceFromNest;
+            float max = Mathf.Max(min + 1f, settings.foodNearRadius);
+            for (int attempt = 0; attempt < 12; attempt++)
+            {
+                // Square root spreads the piles evenly over the ring instead of crowding its inner edge.
+                float distance = Mathf.Sqrt(Random.Range(min * min, max * max));
+                Vector2 spot = game.Surface.Clamp(hill + Random.insideUnitCircle.normalized * distance);
+                if (Vector2.Distance(spot, hill) < min || game.Surface.IsBlocked(spot, 0.5f)) continue;
+                return spot;
+            }
+            return game.Surface.RandomPoint(min);
+        }
+
+        /// <summary>An existing pile to grow a patch around; piles near the nest are likelier.</summary>
+        FoodSource PickNeighbour()
+        {
+            float total = 0f;
+            foreach (FoodSource food in sources) total += NeighbourWeight(food);
+            float roll = Random.value * total;
+            foreach (FoodSource food in sources)
+            {
+                roll -= NeighbourWeight(food);
+                if (roll <= 0f) return food;
+            }
+            return sources.Count > 0 ? sources[sources.Count - 1] : null;
+        }
+
+        float NeighbourWeight(FoodSource food)
+        {
+            float distance = Vector2.Distance(food.Position, game.Surface.EntrancePoint);
+            return 1f / (1f + distance / (game.Settings.foodNearRadius * 0.5f));
         }
 
         /// <summary>A free spot a little away from <paramref name="center"/>: inside the field, off the ant hill, not on another pile.</summary>
@@ -264,6 +318,9 @@ namespace AntColony
             if (upsideDown) visual.color = new Color(0.75f, 0.65f, 0.6f);
             if (created) GameArt.ScaleToWidth(visual, width);
             else food.PickRandomLook(visual);
+            // Big and huge piles (more trips than their kind's usual) are drawn bigger.
+            if (!upsideDown && TryFindType(objectName, out FoodType usual) && trips > usual.Trips)
+                visual.transform.localScale *= Mathf.Min(1.8f, Mathf.Sqrt(trips / (float)usual.Trips));
 
             food.Init(this, visual, trips, kind, load);
             sources.Add(food);

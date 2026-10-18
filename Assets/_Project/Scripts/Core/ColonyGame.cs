@@ -166,15 +166,84 @@ namespace AntColony
         /// Spawns the effect prefab set for <paramref name="kind"/> and removes it once it has played.
         /// False if the slot is empty (so the caller can show a built-in effect instead).
         /// </summary>
-        public bool PlayEffect(EffectKind kind, Vector2 position)
+        /// <param name="direction">
+        /// Optional: the way the effect should point (e.g. a spit's flight). The prefab's "up" (as it looks in the
+        /// prefab, e.g. a cone rotated -90 on X to spray upward) is turned to face it.
+        /// </param>
+        public bool PlayEffect(EffectKind kind, Vector2 position, Vector2? direction = null)
         {
             if (Audio != null) Audio.PlayFor(kind, position);
             GameObject prefab = effects.PrefabFor(kind);
             if (prefab == null) return false;
 
-            GameObject effect = Instantiate(prefab, position, Quaternion.identity, AreaRoot(position));
+            // Keep the prefab's own rotation: particle systems are usually tilted so their cone sprays across the screen.
+            Quaternion rotation = prefab.transform.rotation;
+            if (direction.HasValue && direction.Value.sqrMagnitude > 0.0001f)
+                rotation = Quaternion.FromToRotation(Vector3.up, direction.Value) * rotation;
+
+            GameObject effect = Instantiate(prefab, position, rotation, AreaRoot(position));
+            RaiseToEffectsOrder(effect);
             Destroy(effect, EffectLibrary.LifetimeOf(effect));
             return true;
+        }
+
+        /// <summary>Particle renderers drawn below <see cref="SortingOrder.Effects"/> are raised to it, so they show over units.</summary>
+        public static void RaiseToEffectsOrder(GameObject effect)
+        {
+            foreach (ParticleSystemRenderer particles in effect.GetComponentsInChildren<ParticleSystemRenderer>())
+            {
+                if (particles.sortingOrder < SortingOrder.Effects) particles.sortingOrder = SortingOrder.Effects;
+            }
+        }
+
+        /// <summary>
+        /// Starts a trail effect as a child of <paramref name="carrier"/> (e.g. a flying acid blob): it moves and turns
+        /// with it. The prefab's Simulation Space decides the look: World leaves particles behind as a trail, Local keeps
+        /// them with the blob. Null if the slot is empty. Call <see cref="DropTrail"/> when the carrier is gone.
+        /// </summary>
+        public GameObject AttachTrail(EffectKind kind, Transform carrier)
+        {
+            GameObject prefab = effects.PrefabFor(kind);
+            if (prefab == null) return null;
+
+            GameObject trail = Instantiate(prefab, carrier, false);
+            trail.transform.localPosition = Vector3.zero;
+            RaiseToEffectsOrder(trail);
+            FollowTransformVelocity(trail);
+            return trail;
+        }
+
+        /// <summary>
+        /// Flying shots have no Rigidbody, so their particles must measure movement from the Transform; otherwise
+        /// "Rate over Distance" sees no movement and emits nothing.
+        /// </summary>
+        public static void FollowTransformVelocity(GameObject carrier)
+        {
+            foreach (ParticleSystem particles in carrier.GetComponentsInChildren<ParticleSystem>())
+            {
+                ParticleSystem.MainModule main = particles.main;
+                main.emitterVelocityMode = ParticleSystemEmitterVelocityMode.Transform;
+            }
+        }
+
+        /// <summary>Lets go of a trail: it stays where it is, stops emitting, and is removed once its last particles fade.</summary>
+        public void DropTrail(GameObject trail)
+        {
+            if (trail == null) return;
+            trail.transform.SetParent(AreaRoot(trail.transform.position), true);
+
+            float longest = 0f;
+            foreach (ParticleSystem particles in trail.GetComponentsInChildren<ParticleSystem>())
+            {
+                particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+                longest = Mathf.Max(longest, particles.main.startLifetime.constantMax);
+            }
+            foreach (TrailRenderer line in trail.GetComponentsInChildren<TrailRenderer>())
+            {
+                line.emitting = false;
+                longest = Mathf.Max(longest, line.time);
+            }
+            Destroy(trail, longest + 0.1f);
         }
 
         public void ShowMessage(string text)

@@ -105,9 +105,25 @@ namespace AntColony
             walkProgress = 0f;
             body.sprite = frames.Walk[0];
             body.flipX = false;
+            KeepBodyWidth();
             restPosition = view == BodyView.Side ? new Vector3(0f, GameArt.PivotHeight(body), 0f) : Vector3.zero;
             body.transform.localPosition = restPosition;
             ApplyFacing();
+        }
+
+        /// <summary>
+        /// The two views' art can be drawn at very different sizes (16 px side-view ants, 500 px painted top-down ones):
+        /// scale the body so it stays as wide in the world as when it was attached.
+        /// </summary>
+        void KeepBodyWidth()
+        {
+            if (bodyWidth <= 0f || body.sprite == null) return;
+            Transform parent = body.transform.parent;
+            float parentScale = parent != null ? Mathf.Abs(parent.lossyScale.x) : 1f;
+            float spriteWidth = body.sprite.bounds.size.x * parentScale;
+            if (spriteWidth < 0.0001f) return;
+            float scale = bodyWidth / spriteWidth;
+            body.transform.localScale = new Vector3(scale, scale, body.transform.localScale.z);
         }
 
         /// <summary>Turns the body toward a direction (ignored if the direction is zero).</summary>

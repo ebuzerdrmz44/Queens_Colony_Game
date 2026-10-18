@@ -21,6 +21,13 @@ namespace AntColony
         [Tooltip("Needs a child called \"Body\" with a SpriteRenderer.")]
         public GameObject queen;
 
+        [Header("Projectiles (flying shots; their \"right\" / X axis points the way they fly)")]
+        [Tooltip("The blob a spitter spits. Put a sprite and any trail particles in it as children: they move and turn with it. " +
+                 "When it lands, child particle systems are let go and fade out. Empty: a small green blob.")]
+        public GameObject spitterShot;
+        [Tooltip("The shot an acid tower fires. Same rules as the spitter's. Empty: a green blob.")]
+        public GameObject towerShot;
+
         [Header("Defenses")]
         public Structure wall;
         public Structure tower;

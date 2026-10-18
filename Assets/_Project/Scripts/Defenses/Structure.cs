@@ -115,7 +115,7 @@ namespace AntColony
             Enemy target = game.Waves.FindNearestEnemy(Position, Position, settings.towerRange);
             if (target == null) return;
 
-            AcidShot.Fire(game, Position, target, settings.towerDamage);
+            AcidShot.Fire(game, Position, target, settings.towerDamage, prefab: game.Prefabs.towerShot);
             game.Audio.Play(Sound.TowerFire, Position);
             shotCooldownLeft = settings.towerCooldown;
         }

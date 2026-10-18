@@ -20,6 +20,8 @@ namespace AntColony
         float distance;
         Action<Vector2> onLanded;
         SpriteRenderer blob;
+        ColonyGame game;
+        GameObject trail;
 
         public static void Throw(ColonyGame game, Vector2 from, Vector2 to, Action<Vector2> landed)
         {
@@ -34,6 +36,8 @@ namespace AntColony
             glob.target = to;
             glob.distance = Mathf.Max(0.01f, Vector2.Distance(from, to));
             glob.onLanded = landed;
+            glob.game = game;
+            glob.trail = game.AttachTrail(EffectKind.BossGlobTrail, sprite.transform);
         }
 
         void Update()
@@ -51,6 +55,7 @@ namespace AntColony
 
             if (t < 1f) return;
             onLanded?.Invoke(target);
+            game.DropTrail(trail);
             Destroy(gameObject);
         }
     }

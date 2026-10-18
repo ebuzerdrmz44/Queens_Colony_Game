@@ -33,6 +33,8 @@ namespace AntColony
         public const int BuildPreview = 17;
         public const int TreeCanopies = 18;
         public const int FallingLeaves = 20;
+        /// <summary>Effect prefabs drawn lower than this are raised to it, so they show over the units they play on.</summary>
+        public const int Effects = 25;
         public const int HealthBars = 30;
     }
 }

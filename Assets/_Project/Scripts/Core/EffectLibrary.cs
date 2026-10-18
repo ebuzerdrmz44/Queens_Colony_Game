@@ -33,6 +33,9 @@ namespace AntColony
         BossQuake,
         BossMegaSpit,
         BossMegaSpitHit,
+        SpitterShotTrail,
+        TowerShotTrail,
+        BossGlobTrail,
     }
 
     /// <summary>
@@ -92,6 +95,13 @@ namespace AntColony
         public GameObject spitterSpit;
         [Tooltip("A spitter's acid hits an enemy.")]
         public GameObject spitterAcidHit;
+        [Tooltip("Rides along on each blob a spitter spits (a child of it, so it moves and turns with it), and fades out " +
+                 "after it lands. Simulation Space World leaves a trail behind; Local keeps the particles on the blob.")]
+        public GameObject spitterShotTrail;
+
+        [Header("Towers")]
+        [Tooltip("Rides along on each acid shot a tower fires.")]
+        public GameObject towerShotTrail;
 
         [Header("Final boss")]
         [Tooltip("The boss walks onto the meadow.")]
@@ -105,6 +115,8 @@ namespace AntColony
         public GameObject bossMegaSpit;
         [Tooltip("The mega glob lands (splash). Spawned where it lands.")]
         public GameObject bossMegaSpitHit;
+        [Tooltip("Rides along on the boss's mega glob.")]
+        public GameObject bossGlobTrail;
 
         public GameObject PrefabFor(EffectKind kind)
         {
@@ -137,6 +149,9 @@ namespace AntColony
                 case EffectKind.BossQuake: return bossQuake;
                 case EffectKind.BossMegaSpit: return bossMegaSpit;
                 case EffectKind.BossMegaSpitHit: return bossMegaSpitHit;
+                case EffectKind.SpitterShotTrail: return spitterShotTrail;
+                case EffectKind.TowerShotTrail: return towerShotTrail;
+                case EffectKind.BossGlobTrail: return bossGlobTrail;
                 default: return null;
             }
         }

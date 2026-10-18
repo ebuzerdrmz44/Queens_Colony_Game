@@ -32,6 +32,8 @@ namespace AntColony
         Vector2 post;
         Enemy target;
         protected float attackCooldownLeft;
+        /// <summary>When it last fought, so the status can say "fighting" for a moment after each blow.</summary>
+        float lastFightTime = -10f;
         SpriteRenderer selectionRing;
         float bestDistance = float.MaxValue;
         float noProgressTime;
@@ -57,6 +59,29 @@ namespace AntColony
             order = Order.Attack;
             target = enemy;
             ClearRoute();
+        }
+
+        public override AntState Status
+        {
+            get
+            {
+                if (Time.time - lastFightTime < 0.5f) return AntState.Fighting;
+                if (!IsOnSurface || order == Order.Move) return AntState.Moving;
+                return AntState.Guarding;
+            }
+        }
+
+        public override string Activity
+        {
+            get
+            {
+                switch (Status)
+                {
+                    case AntState.Fighting: return order == Order.Attack ? "attacking its target" : "fighting off an enemy";
+                    case AntState.Moving: return IsOnSurface ? "marching to its spot" : "climbing out of the nest";
+                    default: return IsSelected ? "guarding (selected)" : "guarding its post";
+                }
+            }
         }
 
         public void SetSelected(bool selected)
@@ -114,6 +139,7 @@ namespace AntColony
                         post = Position;
                         break;
                     }
+                    lastFightTime = Time.time;
                     Fight(target);
                     break;
 
@@ -139,6 +165,7 @@ namespace AntColony
                 return;
             }
 
+            lastFightTime = Time.time;
             Fight(enemy);
         }
 

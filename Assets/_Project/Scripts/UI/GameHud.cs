@@ -193,6 +193,10 @@ namespace AntColony
                 if (!anyButtonHovered) hoveredButton = Rect.zero;
                 coverRects.Clear();
                 coverRects.AddRange(nextCoverRects);
+                // Over everything else, once all panels have said where they are.
+                bool playing = !game.InMainMenu && !game.IsPaused && game.State == GameState.Playing
+                               && (game.Tutorial == null || !game.Tutorial.ShowingPopup);
+                if (playing) DrawAntCard();
                 hoverParticles?.Draw();
             }
         }
@@ -1567,6 +1571,7 @@ namespace AntColony
         {
             { "WASD / wheel", "pan / zoom" },
             { "Drag / click", "select soldiers" },
+            { "Double-click", "all soldiers of that kind" },
             { "Right-click", "move or attack" },
             { "E / Q", "all / halve soldiers" },
             { "Z", "raise an acid spitter" },
@@ -1749,6 +1754,79 @@ namespace AntColony
         }
 
         /// <summary>The box being dragged to select soldiers.</summary>
+        /// <summary>
+        /// When the mouse is over an ant: a small card by the cursor with its name, its kind and mission, what it's
+        /// up to (WORKING, IDLE, FIGHTING...) and its health.
+        /// </summary>
+        void DrawAntCard()
+        {
+            if (Event.current.type != EventType.Repaint || game.CameraRig.Fade > 0f || Mouse.current == null) return;
+            Vector2 mouse = Mouse.current.position.ReadValue();
+            if (IsPointerOverUi(mouse) || game.Selection.IsDragging || game.Gather.IsDragging) return;
+
+            Ant ant = AntUnderMouse(game.CameraRig.ScreenToWorld(mouse));
+            if (ant == null) return;
+
+            string kind = ant.Role == AntRole.Spitter ? "Acid spitter" : ant.Role.ToString();
+            bool hasMission = ant.Role == AntRole.Worker || ant.Role == AntRole.Builder;
+            string mission = hasMission ? (ant.Mission == Mission.Auto ? "Free" : Missions.NameOf(ant.Mission)) : "";
+            string status = ant.Status.ToString().ToUpperInvariant();
+            Color statusColor = ant.Status == AntState.Idle ? Muted
+                : ant.Status == AntState.Fighting || ant.Status == AntState.Fleeing ? Bad
+                : ant.Status == AntState.Working ? Good : Gold;
+
+            const float width = 210f;
+            string activity = ant.Activity;
+            float activityHeight = string.IsNullOrEmpty(activity) ? 0f : font.MeasureHeight(activity, small, width - 20f) + 2f;
+            float height = 10f + 20f + 16f + 18f + activityHeight + 16f + 6f;
+
+            // Beside the cursor, kept on screen.
+            var guiMouse = new Vector2(mouse.x / guiScale, (Screen.height - mouse.y) / guiScale);
+            float screenWidth = Screen.width / guiScale;
+            float x = guiMouse.x + 18f;
+            float y = guiMouse.y + 14f;
+            if (x + width > screenWidth - 4f) x = guiMouse.x - width - 12f;
+            if (y + height > screenHeight - 4f) y = guiMouse.y - height - 8f;
+            var card = Snap(new Rect(x, y, width, height));
+            WoodBox(card);
+
+            float left = card.x + 10f;
+            float textWidth = card.width - 20f;
+            float line = card.y + 8f;
+            Text(new Rect(left, line, textWidth, 20f), ant.Name, Gold, medium, TextAnchor.MiddleLeft);
+            line += 20f;
+            Text(new Rect(left, line, textWidth, 14f), hasMission ? $"{kind} - {mission}" : kind, Cream, small, TextAnchor.MiddleLeft);
+            line += 16f;
+            Text(new Rect(left, line, textWidth, 16f), status, statusColor, medium, TextAnchor.MiddleLeft);
+            line += 18f;
+            if (activityHeight > 0f)
+            {
+                Text(new Rect(left, line, textWidth, activityHeight), activity, Muted, small);
+                line += activityHeight;
+            }
+            GoldBar(new Rect(left, line + 4f, textWidth, 8f), ant.Health.Current / Mathf.Max(1f, ant.Health.Max), BarMissing);
+        }
+
+        /// <summary>The ant whose body is under <paramref name="point"/> in the view on screen, or null.</summary>
+        Ant AntUnderMouse(Vector2 point)
+        {
+            bool surface = game.CameraRig.View == CameraView.Surface;
+            Ant best = null;
+            float bestDistance = float.MaxValue;
+            foreach (Ant ant in game.Colony.Ants)
+            {
+                if (ant == null || ant.IsOnSurface != surface) continue;
+                float distance = Vector2.Distance(ant.BodyCenter, point);
+                float reach = Mathf.Max(0.35f, ant.BodyWidth * 0.55f);
+                if (distance < reach && distance < bestDistance)
+                {
+                    best = ant;
+                    bestDistance = distance;
+                }
+            }
+            return best;
+        }
+
         void DrawSelectionBox(float scale)
         {
             SoldierSelection selection = game.Selection;

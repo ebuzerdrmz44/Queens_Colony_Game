@@ -25,6 +25,11 @@ namespace AntColony
         ColonyGame game;
         Vector2 dragStart;
 
+        /// <summary>Two clicks on soldiers this close in time (seconds) are a double-click.</summary>
+        const float DoubleClickTime = 0.35f;
+        SoldierAnt lastClicked;
+        float lastClickTime = -10f;
+
         public IReadOnlyList<SoldierAnt> Selected => selected;
         /// <summary>Move or attack orders given so far, for the goals.</summary>
         public int OrdersGiven { get; private set; }
@@ -136,11 +141,37 @@ namespace AntColony
                 }
             }
 
+            // Double-click: every ant of the same kind (soldiers or spitters) on the surface.
+            bool doubleClick = clicked != null && lastClicked != null && clicked.Role == lastClicked.Role
+                               && Time.unscaledTime - lastClickTime < DoubleClickTime;
+            lastClicked = clicked;
+            lastClickTime = Time.unscaledTime;
+            if (doubleClick)
+            {
+                SelectAllOfType(clicked.Role, additive);
+                lastClicked = null; // a third click starts over
+                return;
+            }
+
             if (!additive) Clear();
             if (clicked == null) return;
 
             if (additive && clicked.IsSelected) Remove(clicked);
             else Add(clicked);
+        }
+
+        /// <summary>Selects every soldier of one kind on the surface (keeping the current ones with Shift).</summary>
+        public void SelectAllOfType(AntRole role, bool additive = false)
+        {
+            if (!additive) Clear();
+            foreach (SoldierAnt soldier in game.Colony.Soldiers)
+            {
+                if (soldier.Role == role && soldier.IsOnSurface) Add(soldier);
+            }
+            string kind = role == AntRole.Spitter ? "spitter" : "soldier";
+            int count = 0;
+            foreach (SoldierAnt soldier in selected) if (soldier.Role == role) count++;
+            game.ShowMessage($"All {count} {kind}{(count == 1 ? "" : "s")} selected.");
         }
 
         void BoxSelect(Rect screenRect, bool additive)

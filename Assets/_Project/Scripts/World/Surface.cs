@@ -113,10 +113,44 @@ namespace AntColony
             PlaceDecorations();
             PlaceScenery();
             PlaceGroves();
+            nav = new SurfaceNav(Bounds, obstacles);
 
             SpriteRenderer hill = art.CreateSprite("Ant Hill", transform, art.AntHill, SortingOrder.AntHill);
             GameArt.ScaleToWidth(hill, AntHillWidth);
             hill.transform.position = EntrancePoint;
+        }
+
+        SurfaceNav nav;
+        readonly System.Collections.Generic.List<Vector2> routeBuffer = new System.Collections.Generic.List<Vector2>();
+
+        /// <summary>
+        /// Adds waypoints for walking from <paramref name="from"/> to <paramref name="to"/> on the surface, around
+        /// solid scenery and finished walls and towers (ending at <paramref name="to"/>). Straight there if there's no way round.
+        /// </summary>
+        public void AddRoute(Vector2 from, Vector2 to, System.Collections.Generic.List<Waypoint> path)
+        {
+            if (nav != null)
+            {
+                nav.Refresh(game.Defenses != null ? game.Defenses.Structures : null);
+                if (nav.FindPath(from, to, routeBuffer))
+                {
+                    foreach (Vector2 point in routeBuffer) path.Add(new Waypoint(point));
+                    return;
+                }
+            }
+            path.Add(new Waypoint(to));
+        }
+
+        /// <summary>
+        /// Waypoints for an enemy from <paramref name="from"/> to <paramref name="to"/>: around rocks, logs and trunks,
+        /// but straight through walls and towers (it chews them). Just the target if there's no way round.
+        /// </summary>
+        public void FindEnemyRoute(Vector2 from, Vector2 to, System.Collections.Generic.List<Vector2> route)
+        {
+            route.Clear();
+            if (nav != null && nav.FindPath(from, to, route, includeStructures: false)) return;
+            route.Clear();
+            route.Add(to);
         }
 
         public Vector2 Clamp(Vector2 point)
@@ -399,6 +433,16 @@ namespace AntColony
                 if (Vector2.Distance(point, obstacle.Center) < obstacle.Radius + radius) return true;
             }
             return false;
+        }
+
+        /// <summary>True if a circle at <paramref name="point"/> overlaps solid scenery or (optionally) a finished wall or tower.</summary>
+        public bool IsSolid(Vector2 point, float radius, bool includeStructures)
+        {
+            foreach (Obstacle obstacle in Solids(includeStructures))
+            {
+                if (Vector2.Distance(point, obstacle.Center) < obstacle.Radius + radius) return true;
+            }
+            return !Bounds.Contains(point);
         }
 
         /// <summary>Moves a walker of <paramref name="radius"/> out of anything solid it ended up inside.</summary>

@@ -157,7 +157,7 @@ namespace AntColony
 
             if (!fromNest && !toNest)
             {
-                path.Add(new Waypoint(to));
+                game.Surface.AddRoute(from, to, path);
                 return true;
             }
 
@@ -167,7 +167,7 @@ namespace AntColony
 
             if (!fromNest)
             {
-                path.Add(new Waypoint(game.Surface.EntrancePoint));
+                game.Surface.AddRoute(from, game.Surface.EntrancePoint, path);
                 path.Add(new Waypoint(ExitPoint, throughEntrance: true));
             }
 
@@ -181,7 +181,7 @@ namespace AntColony
             {
                 path.Add(new Waypoint(ExitPoint));
                 path.Add(new Waypoint(game.Surface.EntrancePoint, throughEntrance: true));
-                path.Add(new Waypoint(to));
+                game.Surface.AddRoute(game.Surface.EntrancePoint, to, path);
             }
             return true;
         }

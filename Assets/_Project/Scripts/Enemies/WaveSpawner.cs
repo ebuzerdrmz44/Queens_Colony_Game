@@ -29,6 +29,12 @@ namespace AntColony
         public bool HasMoreWaves => CurrentWave < TotalWaves;
         /// <summary>Enemies are on the field or still arriving.</summary>
         public bool IsWaveActive => enemies.Count > 0 || enemiesWaitingToSpawn > 0;
+
+        void LateUpdate()
+        {
+            // An enemy destroyed without going through RemoveEnemy must not hold up the end of a wave.
+            enemies.RemoveAll(enemy => enemy == null);
+        }
         public bool AllWavesDefeated => !HasMoreWaves && enemiesWaitingToSpawn == 0 && enemies.Count == 0;
 
         public bool IsNestUnderAttack

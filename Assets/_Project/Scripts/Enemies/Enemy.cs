@@ -22,6 +22,20 @@ namespace AntColony
         float attackCooldownLeft;
         int avoidSide;
         float summonTimer;
+
+        // Finding the way to the ant hill around rocks and logs (see Surface.FindEnemyRoute).
+        const float ReplanEvery = 4f;
+        const float WaypointReach = 0.4f;
+        /// <summary>Barely moving this long: plan again. Much longer: scramble over whatever is in the way.</summary>
+        const float StuckReplanTime = 2f;
+        const float StuckScrambleTime = 10f;
+        const float ScrambleTime = 3f;
+        readonly System.Collections.Generic.List<Vector2> route = new System.Collections.Generic.List<Vector2>();
+        int routeIndex;
+        float replanTimer;
+        Vector2 stuckCheckPoint;
+        float stuckTime;
+        float scrambleTimeLeft;
         BossSkills skills;
 
         public bool IsBoss => stats != null && stats.kind == EnemyKind.Boss;
@@ -89,11 +103,7 @@ namespace AntColony
             if (Vector2.Distance(entrance, Position) > EntranceReach)
             {
                 IsAttackingNest = false;
-                animator.Face(entrance - Position);
-                // Around boulders and logs (towers and walls get chewed instead, see above).
-                Vector2 direction = game.Surface.SteerAround(Position, entrance, Radius, includeStructures: false, ref avoidSide);
-                Vector2 next = Position + direction * Mathf.Min(stats.speed * Time.deltaTime, Vector2.Distance(Position, entrance));
-                transform.position = game.Surface.PushOut(next, Radius, includeStructures: false);
+                WalkToward(entrance);
                 return;
             }
 
@@ -105,6 +115,57 @@ namespace AntColony
                 game.Colony.DamageQueen(stats.damage);
                 game.PlayEffect(EffectKind.QueenHit, entrance);
                 attackCooldownLeft = stats.attackCooldown;
+            }
+        }
+
+        /// <summary>
+        /// One frame of walking to <paramref name="goal"/> along a planned route around boulders and logs (towers and
+        /// walls get chewed instead, see Update). A stuck enemy plans again, and one stuck for long scrambles over the
+        /// obstacle, so no enemy can hold up the end of a wave by hiding behind a rock.
+        /// </summary>
+        void WalkToward(Vector2 goal)
+        {
+            replanTimer -= Time.deltaTime;
+            if (route.Count == 0 || replanTimer <= 0f)
+            {
+                game.Surface.FindEnemyRoute(Position, goal, route);
+                routeIndex = 0;
+                replanTimer = ReplanEvery;
+            }
+            if (routeIndex < route.Count - 1 && Vector2.Distance(Position, route[routeIndex]) < WaypointReach) routeIndex++;
+            Vector2 waypoint = route[Mathf.Min(routeIndex, route.Count - 1)];
+
+            float step = Mathf.Min(stats.speed * Time.deltaTime, Vector2.Distance(Position, waypoint));
+            Vector2 next;
+            if (scrambleTimeLeft > 0f)
+            {
+                // Over whatever is in the way.
+                scrambleTimeLeft -= Time.deltaTime;
+                next = Vector2.MoveTowards(Position, goal, stats.speed * Time.deltaTime);
+            }
+            else
+            {
+                Vector2 direction = game.Surface.SteerAround(Position, waypoint, Radius, includeStructures: false, ref avoidSide);
+                next = game.Surface.PushOut(Position + direction * step, Radius, includeStructures: false);
+            }
+            animator.Face(next - Position);
+            transform.position = next;
+
+            if (Vector2.Distance(Position, stuckCheckPoint) > 0.3f)
+            {
+                stuckCheckPoint = Position;
+                stuckTime = 0f;
+                return;
+            }
+            stuckTime += Time.deltaTime;
+            if (stuckTime > StuckScrambleTime)
+            {
+                scrambleTimeLeft = ScrambleTime;
+                stuckTime = 0f;
+            }
+            else if (stuckTime > StuckReplanTime && replanTimer > 0.5f)
+            {
+                replanTimer = 0f; // plan again next frame
             }
         }
 

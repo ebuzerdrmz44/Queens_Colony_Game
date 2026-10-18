@@ -35,6 +35,24 @@ namespace AntColony
 
         public override AntRole Role => AntRole.Builder;
         public override bool IsBusy => job != JobKind.None;
+
+        public override string Activity
+        {
+            get
+            {
+                if (IsFleeing) return base.Activity;
+                switch (job)
+                {
+                    case JobKind.Dig: return "digging";
+                    case JobKind.Room: return "building a room";
+                    case JobKind.Structure:
+                        if (structure == null) return "building";
+                        string thing = structure.Kind == StructureKind.Wall ? "a wall" : "a tower";
+                        return structure.IsBuilt ? $"repairing {thing}" : $"building {thing}";
+                    default: return "waiting for work";
+                }
+            }
+        }
         protected override float Speed => Game.Settings.builderSpeed;
         protected override float MaxHealth => Game.Settings.builderHealth;
         protected override bool SteersSmoothly => true;
@@ -123,6 +141,7 @@ namespace AntColony
             job = JobKind.Structure;
             structure = found;
             if (!IsOnSurface) GoTo(WorkSpot(found));
+            else ClearRoute(); // plan the way to this one, not the last one
             return true;
         }
 
@@ -136,14 +155,16 @@ namespace AntColony
                 return;
             }
 
-            ClearRoute();
             float gap = Vector2.Distance(Position, structure.Position) - Radius - structure.Radius;
             if (gap > WorkGap * 2f)
             {
-                StepTowards(WorkSpot(structure));
+                // Walk to a free spot beside it along a planned route (around rocks and finished walls).
+                if (!HasRoute) GoTo(WorkSpot(structure));
+                FollowRoute();
                 return;
             }
 
+            ClearRoute();
             Hammer(structure.Position);
             structure.AddWork(Time.deltaTime);
         }
@@ -203,13 +224,38 @@ namespace AntColony
             DirtChips.Burst(Game, face, towardBuilder, stony ? StoneChips : SoilChips);
         }
 
-        /// <summary>The point on a surface structure's edge nearest to the builder.</summary>
+        /// <summary>
+        /// A free spot beside a surface structure to work from: the nearest of a ring of spots around it that isn't
+        /// inside another wall, tower or rock (in a wall line, the sides facing the neighbouring blocks are wedged shut).
+        /// </summary>
         Vector2 WorkSpot(Structure target)
         {
-            Vector2 fromStructure = IsOnSurface ? Position - target.Position : Game.Surface.EntrancePoint - target.Position;
+            Vector2 from = IsOnSurface ? Position : Game.Surface.EntrancePoint;
+            float reach = target.Radius + Radius + WorkGap;
+            Vector2 best = default;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < WorkSpotChoices; i++)
+            {
+                float angle = i * Mathf.PI * 2f / WorkSpotChoices;
+                Vector2 spot = target.Position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * reach;
+                if (Game.Surface.IsSolid(spot, Radius * 0.8f, includeStructures: true)) continue;
+                float distance = Vector2.Distance(from, spot);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = spot;
+                }
+            }
+            if (bestDistance < float.MaxValue) return best;
+
+            // Boxed in on every side: the side facing the builder, as before.
+            Vector2 fromStructure = from - target.Position;
             if (fromStructure.sqrMagnitude < 0.0001f) fromStructure = Vector2.down;
-            return target.Position + fromStructure.normalized * (target.Radius + Radius + WorkGap);
+            return target.Position + fromStructure.normalized * reach;
         }
+
+        /// <summary>How many spots around a wall or tower a builder considers working from.</summary>
+        const int WorkSpotChoices = 12;
 
         void RestInQueenRoom()
         {

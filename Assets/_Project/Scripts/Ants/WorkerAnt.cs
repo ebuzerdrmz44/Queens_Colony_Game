@@ -41,6 +41,23 @@ namespace AntColony
         public override AntRole Role => AntRole.Worker;
         public WorkerJob Job { get; private set; }
         public override bool IsBusy => Job != WorkerJob.Idle;
+
+        public override string Activity
+        {
+            get
+            {
+                if (IsFleeing) return base.Activity;
+                bool leaves = state == State.GoingToFood ? targetFood != null && targetFood.Kind == FoodKind.Leaves : carriedKind == FoodKind.Leaves;
+                switch (state)
+                {
+                    case State.GoingToFood: return leaves ? "going for leaves" : "going for food";
+                    case State.CarryingFoodHome: return leaves ? "carrying leaves home" : "carrying food home";
+                    case State.FetchingFoodForLarva: return "fetching food for a larva";
+                    case State.CarryingFoodToLarva: return "feeding a larva";
+                    default: return Mission == Mission.Forage || Mission == Mission.Leaves ? "waiting for marked food (6)" : "resting";
+                }
+            }
+        }
         protected override float Speed => Game.Settings.workerSpeed;
         protected override float MaxHealth => Game.Settings.workerHealth;
         protected override bool SteersSmoothly => true;
