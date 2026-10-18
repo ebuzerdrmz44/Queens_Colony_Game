@@ -43,6 +43,13 @@ namespace AntColony
             if (IsDead) Died?.Invoke();
         }
 
+        /// <summary>The body's normal colour (it returns to it after a hit flash), e.g. when its art changes.</summary>
+        public void SetBodyColor(Color color)
+        {
+            bodyColor = color;
+            if (flashTimeLeft <= 0f && body != null) body.color = color;
+        }
+
         /// <summary>Sets the current health directly (used when loading a saved game).</summary>
         public void SetCurrent(float value)
         {

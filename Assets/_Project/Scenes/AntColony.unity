@@ -434,6 +434,11 @@ MonoBehaviour:
     foodClusterChance: 0.75
     foodClusterSpread: 2.6
     foodClusterSameKind: 0.7
+    foodNearRadius: 14
+    foodNearShare: 0.75
+    foodMinNearPiles: 4
+    foodBigPileChance: 0.3
+    foodHugePileChance: 0.1
     firstWaveDelay: 150
     timeBetweenWaves: 75
     wavesToWin: 10
@@ -481,7 +486,7 @@ MonoBehaviour:
     worker: {fileID: 912901624469830964, guid: 40df47659c2e237869bc66468f22c964, type: 3}
     soldier: {fileID: 6934668454931365837, guid: df35572651d6612048a70114413c2b34, type: 3}
     builder: {fileID: 3128155249703605076, guid: 2531e97e8f586ba6e9370f5af19e6c3b, type: 3}
-    spitter: {fileID: 0}
+    spitter: {fileID: 6934668454931365837, guid: 08c1ef086c1f41ed9cc878ef4cd59692, type: 3}
     queen: {fileID: 5064099301339140523, guid: 709dbb7c78c1747eba2f201e2eb4f8e5, type: 3}
     spitterShot: {fileID: 1525674961110607309, guid: 2a801465feac248f5aa5efb0351bca4f, type: 3}
     towerShot: {fileID: 0}
@@ -520,7 +525,7 @@ MonoBehaviour:
     enemyDied: {fileID: 0}
     foodPickedUp: {fileID: 0}
     foodStored: {fileID: 0}
-    larvaFed: {fileID: 0}
+    larvaFed: {fileID: 2338886067307676649, guid: 2a3972e983fa9ee4abcec2bf1af20284, type: 3}
     eggLaid: {fileID: 0}
     antHatched: {fileID: 0}
     gardenMadeFood: {fileID: 0}
@@ -609,6 +614,7 @@ MonoBehaviour:
     queenInDanger: {fileID: 8300000, guid: 2ff3265f9285d1d59aa26284ae19908e, type: 3}
     queenDangerBelow: 0.35
     queenSafeAbove: 0.55
+    queenDangerCalmSeconds: 8
     gameOver: {fileID: 8300000, guid: 6beb07c01037b1bb9a37712c00c25366, type: 3}
     uiClick:
       clips:

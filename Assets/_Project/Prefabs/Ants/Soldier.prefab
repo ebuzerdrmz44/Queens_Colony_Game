@@ -139,22 +139,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AntColony.SoldierAnt
   sideView:
     walk:
-    - {fileID: -9103720623985615036, guid: 982f2c5dc4097709fad6e2ba59f2eea5, type: 3}
-    - {fileID: -6946410579282255255, guid: 2359df38e4d92c9d78aa001c72ea0e91, type: 3}
-    - {fileID: 8927819042975938760, guid: 01b99a37aee168e8e86bb2e2cdb710f6, type: 3}
-    - {fileID: 3410895103876919016, guid: d163039145761206983cc19def5fb650, type: 3}
+    - {fileID: 21300000, guid: 2921934f2f4b43fab05b489d46be3886, type: 3}
+    - {fileID: 21300000, guid: d89068b88a5b41dd9c0675b0cd023b8e, type: 3}
+    - {fileID: 21300000, guid: 08643a906f5a43a092f1ad28e53feff9, type: 3}
+    - {fileID: 21300000, guid: df4cfc7426d943269ac6a77f11949415, type: 3}
     attack:
-    - {fileID: 5393749919979203164, guid: ceb7c71597941a9ef88b2d342205976f, type: 3}
-    - {fileID: -4386168086695573367, guid: 1c012b680ec5ef3aa93604336880d195, type: 3}
+    - {fileID: 21300000, guid: 35bb45fe00ca46b5a2987e403830dee9, type: 3}
+    - {fileID: 21300000, guid: 65f52d742abe4f4389b9249006ff620a, type: 3}
   topView:
     walk:
-    - {fileID: -493532689690223282, guid: 5a0c0646e0f7674e19e57456d2e7787c, type: 3}
-    - {fileID: 8594618956388849276, guid: 466a5f20c37babc11ba6e0eeba9dedbd, type: 3}
-    - {fileID: 5537760519013339513, guid: 75cf280b01c446968b2e5ce119cb53e3, type: 3}
-    - {fileID: -4174546013774373002, guid: fd37cc2cd6327e654ba8c92ae006b41b, type: 3}
+    - {fileID: 21300000, guid: 9bafd4e1650b4fd6af8c228bdfd7e2d1, type: 3}
+    - {fileID: 21300000, guid: 4a3295751f3c4fcbb304bc3a61a4d69d, type: 3}
+    - {fileID: 21300000, guid: e4317d6a6a6145f886031d3b05192869, type: 3}
+    - {fileID: 21300000, guid: b4e8555a84f64d74aff074af2e6b74d4, type: 3}
     attack:
-    - {fileID: 5862263529010907617, guid: b6200078db21613778135b53eda26383, type: 3}
-    - {fileID: -8275045192388200317, guid: 6a6f64bcca5c4d28d993680fdca00704, type: 3}
+    - {fileID: 21300000, guid: 4a3295751f3c4fcbb304bc3a61a4d69d, type: 3}
+    - {fileID: 21300000, guid: 9bafd4e1650b4fd6af8c228bdfd7e2d1, type: 3}
   sideViewFacesLeft: 0
 --- !u!1 &8720744496094288219
 GameObject:
@@ -238,7 +238,7 @@ SpriteRenderer:
   m_SortingOrder: 10
   m_MaskInteraction: 0
   m_Sprite: {fileID: -9103720623985615036, guid: 982f2c5dc4097709fad6e2ba59f2eea5, type: 3}
-  m_Color: {r: 0.55, g: 0.42, b: 0.42, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

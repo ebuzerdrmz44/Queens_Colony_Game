@@ -63,6 +63,10 @@ namespace AntColony
         HealthBar healthBar;
         CreatureFrames sideFrames;
         CreatureFrames topFrames;
+        /// <summary>The body's colour in the nest (a prefab's tint, or the caste colour of code-built ants).</summary>
+        Color sideColor = Color.white;
+        /// <summary>The prefab has its own coloured top-down art: drawn untinted on the surface.</summary>
+        bool customTop;
         Vector2 heading;
         float wanderSeed;
         /// <summary>Which way the ant is going around something in its way (see <see cref="Surface.SteerAround"/>).</summary>
@@ -89,6 +93,19 @@ namespace AntColony
         /// <summary>True while the ant is doing a job (not resting or waiting for work).</summary>
         public virtual bool IsBusy => false;
         public bool IsFleeing => isFleeing;
+
+        /// <summary>A still of this ant's own side-view art (also works on the prefab asset, for HUD icons); null if it has none.</summary>
+        public Sprite SideIcon => Still(sideView);
+        /// <summary>A still of this ant's own top-down art; null if it has none.</summary>
+        public Sprite TopIcon => Still(topView);
+
+        static Sprite Still(CreatureSprites sprites)
+        {
+            if (sprites == null || sprites.walk == null) return null;
+            // The second walk frame is the standing pose in the hand-drawn cycles; fall back to any frame.
+            if (sprites.walk.Length > 1 && sprites.walk[1] != null) return sprites.walk[1];
+            return System.Array.Find(sprites.walk, sprite => sprite != null);
+        }
 
         /// <summary>The ant's own name, picked when it hatches.</summary>
         public string Name { get; private set; } = "";
@@ -140,10 +157,12 @@ namespace AntColony
             bool customSide = sideView != null && sideView.walk != null && System.Array.Exists(sideView.walk, sprite => sprite != null);
             sideFrames = GameArt.Frames(sideView, game.Art.AntSide);
             topFrames = GameArt.Frames(topView, game.Art.AntTop);
+            customTop = topView != null && topView.walk != null && System.Array.Exists(topView.walk, sprite => sprite != null);
             bool facesLeft = customSide ? sideViewFacesLeft : game.Art.AntSideFacesLeft;
 
             Body = UnitBody.FindOrCreate(game.Art, transform, sideFrames.Walk[0], BodyWidth, SortingOrder.Ants, Tint);
             Body.sprite = sideFrames.Walk[0];
+            sideColor = Body.color;
             BodyHeight = GameArt.Height(Body);
             BodyAnimator = UnitAnimator.Attach(transform, Body, BodyView.Side, sideFrames, facesLeft);
 
@@ -376,6 +395,7 @@ namespace AntColony
             bool onSurface = IsOnSurface;
             BodyView view = onSurface ? BodyView.TopDown : BodyView.Side;
             BodyAnimator.SetView(view, onSurface ? topFrames : sideFrames);
+            Health.SetBodyColor(onSurface && customTop ? Color.white : sideColor);
 
             // The side-view body stands on the ant's position; the top-down body is centred on it.
             float barHeight = onSurface ? BodyWidth * 0.5f + HealthBarGap : BodyHeight + HealthBarGap;

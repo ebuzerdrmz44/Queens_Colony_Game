@@ -394,11 +394,10 @@ namespace AntColony
 
             // Ants by caste.
             float column = (right - x) / 4f;
-            Sprite ant = art.AntSide.Walk[0];
-            CasteCount(new Vector2(x, y), SkinIcon(skin?.iconWorker, ant), skin?.iconWorker != null ? Color.white : new Color(0.85f, 0.3f, 0.2f), colony.CountAnts(AntRole.Worker), "W");
-            CasteCount(new Vector2(x + column, y), SkinIcon(skin?.iconSoldier, ant), skin?.iconSoldier != null ? Color.white : SoldierTint, colony.CountAnts(AntRole.Soldier), "S");
-            CasteCount(new Vector2(x + column * 2f, y), SkinIcon(skin?.iconBuilder, ant), skin?.iconBuilder != null ? Color.white : BuilderTint, colony.CountAnts(AntRole.Builder), "B");
-            CasteCount(new Vector2(x + column * 3f, y), SkinIcon(skin?.iconSpitter, ant), skin?.iconSpitter != null ? Color.white : SpitterTint, colony.CountAnts(AntRole.Spitter), "A");
+            CasteIconCount(new Vector2(x, y), skin?.iconWorker, AntRole.Worker, "W");
+            CasteIconCount(new Vector2(x + column, y), skin?.iconSoldier, AntRole.Soldier, "S");
+            CasteIconCount(new Vector2(x + column * 2f, y), skin?.iconBuilder, AntRole.Builder, "B");
+            CasteIconCount(new Vector2(x + column * 3f, y), skin?.iconSpitter, AntRole.Spitter, "A");
             y += row;
 
             // Brood.
@@ -427,6 +426,33 @@ namespace AntColony
         }
 
         static Sprite SkinIcon(Sprite custom, Sprite fallback) => custom != null ? custom : fallback;
+
+        /// <summary>
+        /// The icon for an ant caste: its own art from its prefab (side view, or top view when asked), drawn as it is;
+        /// without one, the game's generic ant tinted in the caste's colour.
+        /// </summary>
+        (Sprite sprite, Color tint) CasteArt(AntRole role, bool topDown = false)
+        {
+            Ant prefab = game.Prefabs.AntFor(role);
+            Sprite own = prefab != null ? (topDown ? prefab.TopIcon : prefab.SideIcon) : null;
+            if (own != null) return (own, Color.white);
+
+            Sprite generic = topDown ? game.Art.AntTop.Walk[0] : game.Art.AntSide.Walk[0];
+            switch (role)
+            {
+                case AntRole.Soldier: return (generic, SoldierTint);
+                case AntRole.Builder: return (generic, BuilderTint);
+                case AntRole.Spitter: return (generic, SpitterTint);
+                default: return (generic, new Color(0.85f, 0.3f, 0.2f));
+            }
+        }
+
+        /// <summary>A caste's count with its icon: the UI skin's icon if one is set, otherwise the caste's own art.</summary>
+        void CasteIconCount(Vector2 position, Sprite skinIcon, AntRole role, string letter)
+        {
+            (Sprite sprite, Color tint) = skinIcon != null ? (skinIcon, Color.white) : CasteArt(role);
+            CasteCount(position, sprite, tint, game.Colony.CountAnts(role), letter);
+        }
 
         void CasteCount(Vector2 position, Sprite icon, Color tint, int count, string letter)
         {
@@ -659,15 +685,18 @@ namespace AntColony
             int food = game.Colony.Food;
             bool onSurface = game.CameraRig.View == CameraView.Surface;
             var actions = new List<ActionSpec>();
-            Sprite ant = art.AntTop.Walk[0];
+            var worker = CasteArt(AntRole.Worker);
+            var soldier = CasteArt(AntRole.Soldier);
+            var builder = CasteArt(AntRole.Builder);
+            var spitter = CasteArt(AntRole.Spitter);
 
-            actions.Add(RaiseAction("1", "Worker", AntRole.Worker, ant, Color.white,
+            actions.Add(RaiseAction("1", "Worker", AntRole.Worker, worker.sprite, worker.tint,
                 "Gathers food and leaves on the surface and feeds larvae. Your economy."));
-            actions.Add(RaiseAction("2", "Soldier", AntRole.Soldier, ant, SoldierTint,
+            actions.Add(RaiseAction("2", "Soldier", AntRole.Soldier, soldier.sprite, soldier.tint,
                 "Guards the ant hill and fights. Command soldiers on the surface. Eats food but earns none."));
-            actions.Add(RaiseAction("3", "Builder", AntRole.Builder, ant, BuilderTint,
+            actions.Add(RaiseAction("3", "Builder", AntRole.Builder, builder.sprite, builder.tint,
                 "Digs tunnels, builds rooms, walls and towers, and repairs damage."));
-            actions.Add(RaiseAction("Z", "Spitter", AntRole.Spitter, ant, SpitterTint,
+            actions.Add(RaiseAction("Z", "Spitter", AntRole.Spitter, spitter.sprite, spitter.tint,
                 "A soldier that spits acid from a distance. Frail: keep it behind biters and walls. Selected and ordered like soldiers."));
 
             if (onSurface)
@@ -734,7 +763,7 @@ namespace AntColony
 
             actions.Add(new ActionSpec
             {
-                Key = "M", Label = "Missions", Icon = art.AntTop.Walk[0], IconTint = Color.white, Cost = "",
+                Key = "M", Label = "Missions", Icon = worker.sprite, IconTint = worker.tint, Cost = "",
                 TooltipTitle = "Missions", Tooltip = "Give workers and builders a single job: larva feeders, food gatherers, leaf cutters, diggers, wall builders.",
                 Available = true, Active = showMissions, OnClick = ToggleMissions,
             });
@@ -1173,7 +1202,8 @@ namespace AntColony
             GUI.color = new Color(0f, 0f, 0f, 0.3f);
             GUI.DrawTexture(strip, Texture2D.whiteTexture);
             GUI.color = previous;
-            Icon(new Vector2(left + 10f, y + 12f), game.Art.AntTop.Walk[0], tint, maxSize: 18f);
+            var caste = CasteArt(role);
+            Icon(new Vector2(left + 10f, y + 12f), caste.sprite, caste.tint, maxSize: 18f);
             Text(new Rect(left + 26f, y, 200f, 24f), $"{title}  {colony.CountAnts(role)}", Cream, medium, TextAnchor.MiddleLeft);
             Text(new Rect(left, y, innerWidth - 4f, 24f), $"{free} free", free > 0 ? Good : Muted, small, TextAnchor.MiddleRight);
             y += 32f;
@@ -1919,7 +1949,7 @@ namespace AntColony
             else
             {
                 float top = screenHeight * 0.18f;
-                Icon(new Vector2(centerX, top), game.Art.AntSide.Walk[0], null, maxSize: 64f);
+                Icon(new Vector2(centerX, top), CasteArt(AntRole.Worker).sprite, null, maxSize: 64f);
                 Text(new Rect(0f, top + 40f, screenWidth, 50f), title, LeafOrange, huge, TextAnchor.UpperCenter);
                 Text(new Rect(0f, top + 92f, screenWidth, 20f), tagline, Cream, medium, TextAnchor.UpperCenter);
                 y = top + 140f;

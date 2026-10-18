@@ -49,22 +49,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AntColony.WorkerAnt
   sideView:
     walk:
-    - {fileID: -9103720623985615036, guid: 982f2c5dc4097709fad6e2ba59f2eea5, type: 3}
-    - {fileID: -6946410579282255255, guid: 2359df38e4d92c9d78aa001c72ea0e91, type: 3}
-    - {fileID: 8927819042975938760, guid: 01b99a37aee168e8e86bb2e2cdb710f6, type: 3}
-    - {fileID: 3410895103876919016, guid: d163039145761206983cc19def5fb650, type: 3}
+    - {fileID: 21300000, guid: 1529c6f06698490bb212a5bb69868ad6, type: 3}
+    - {fileID: 21300000, guid: ad3b27380c224874916205fe1ec4a10f, type: 3}
+    - {fileID: 21300000, guid: ba0f3662be1844b780044e2e0a3e69ff, type: 3}
+    - {fileID: 21300000, guid: 6bd5c1fea8dd4f61b3e6a86c32b1e4b3, type: 3}
     attack:
-    - {fileID: 5393749919979203164, guid: ceb7c71597941a9ef88b2d342205976f, type: 3}
-    - {fileID: -4386168086695573367, guid: 1c012b680ec5ef3aa93604336880d195, type: 3}
+    - {fileID: 21300000, guid: 65805e8927794a93a826aa5485db970b, type: 3}
+    - {fileID: 21300000, guid: 6bd716c3766a4aacbc23f007a31bda80, type: 3}
   topView:
     walk:
-    - {fileID: -493532689690223282, guid: 5a0c0646e0f7674e19e57456d2e7787c, type: 3}
-    - {fileID: 8594618956388849276, guid: 466a5f20c37babc11ba6e0eeba9dedbd, type: 3}
-    - {fileID: 5537760519013339513, guid: 75cf280b01c446968b2e5ce119cb53e3, type: 3}
-    - {fileID: -4174546013774373002, guid: fd37cc2cd6327e654ba8c92ae006b41b, type: 3}
+    - {fileID: 21300000, guid: 3bbd68be360a4938b215b92c4cd390f8, type: 3}
+    - {fileID: 21300000, guid: fe6ac4e1311442f1a7c9e723b3414271, type: 3}
+    - {fileID: 21300000, guid: da7769010c8b4012bac1a6539a005820, type: 3}
+    - {fileID: 21300000, guid: d529787ca8bd4a0c887a62782859e5c2, type: 3}
     attack:
-    - {fileID: 5862263529010907617, guid: b6200078db21613778135b53eda26383, type: 3}
-    - {fileID: -8275045192388200317, guid: 6a6f64bcca5c4d28d993680fdca00704, type: 3}
+    - {fileID: 21300000, guid: fe6ac4e1311442f1a7c9e723b3414271, type: 3}
+    - {fileID: 21300000, guid: 3bbd68be360a4938b215b92c4cd390f8, type: 3}
   sideViewFacesLeft: 0
 --- !u!114 &5355030566443095615
 MonoBehaviour:
