@@ -66,10 +66,76 @@ namespace AntColony
         /// <summary>Height of the screen in GUI units (about <see cref="ReferenceHeight"/>, a bit more at some resolutions).</summary>
         float screenHeight = ReferenceHeight;
         bool showMissions;
+        bool missionsPositionSet;
+        Vector2 missionsPosition;
+        Vector2 missionsDragOffset;
+        int missionsDragControl;
+        bool IsDraggingMissions => missionsDragControl != 0 && GUIUtility.hotControl == missionsDragControl;
+
+        void StopMissionsDrag()
+        {
+            StopWindowDrag(ref missionsDragControl);
+        }
         bool showReport;
+        bool showWaveReport;
+        bool waveReportPositionSet;
+        Vector2 waveReportPosition;
+        Vector2 waveReportDragOffset;
+        int waveReportDragControl;
+        int selectedReportWave;
+        bool IsDraggingWaveReport => waveReportDragControl != 0 && GUIUtility.hotControl == waveReportDragControl;
+        bool reportPositionSet;
+        Vector2 reportPosition;
+        Vector2 reportDragOffset;
+        int reportDragControl;
+        bool IsDraggingReport => reportDragControl != 0 && GUIUtility.hotControl == reportDragControl;
         bool showHelp;
         bool showSound;
-        bool showTrackList;
+        bool showMusic;
+        int musicFirstTrack;
+        AudioClip portraitTrack;
+        int portraitSelection = -2;
+        int portraitIndex = -1;
+        int previousPortrait = -1;
+        float portraitChangedAt;
+        bool musicPositionSet;
+        Vector2 musicPosition;
+        Vector2 musicDragOffset;
+        int musicDragControl;
+        bool IsDraggingMusic => musicDragControl != 0 && GUIUtility.hotControl == musicDragControl;
+
+        static void StopWindowDrag(ref int control)
+        {
+            if (control != 0 && GUIUtility.hotControl == control) GUIUtility.hotControl = 0;
+            control = 0;
+        }
+        enum Confirmation { None, NewGame, Tutorial, MainMenu }
+        Confirmation confirmation;
+        string confirmationError = "";
+        bool drawingConfirmation;
+        public bool HasConfirmation => confirmation != Confirmation.None;
+
+        public void CancelConfirmation()
+        {
+            confirmation = Confirmation.None;
+            confirmationError = "";
+            coverRects.Clear();
+            nextCoverRects.Clear();
+        }
+
+        public void RequestNewGame(bool tutorial = false)
+        {
+            ClosePanels();
+            if (game.HasSave)
+                confirmation = tutorial ? Confirmation.Tutorial : Confirmation.NewGame;
+            else game.StartNewGame(tutorial);
+        }
+
+        void RequestMainMenu()
+        {
+            ClosePanels();
+            confirmation = Confirmation.MainMenu;
+        }
 
         /// <summary>Where each action button was drawn this frame, by its key (for the tutorial's highlight).</summary>
         readonly Dictionary<string, Rect> actionRects = new Dictionary<string, Rect>();
@@ -211,9 +277,16 @@ namespace AntColony
         /// <summary>Closes the report, missions, help or sound panel. False if none was open.</summary>
         public bool ClosePanels()
         {
-            bool anyOpen = showReport || showHelp || showMissions || showSound || showTrackList || selectedRoom != null;
-            showReport = showHelp = showMissions = showSound = showTrackList = false;
+            bool anyOpen = showReport || showHelp || showMissions || showSound || showMusic || showWaveReport || selectedRoom != null;
+            showReport = showHelp = showMissions = showSound = showMusic = showWaveReport = false;
             selectedRoom = null;
+            StopMissionsDrag();
+            StopWindowDrag(ref musicDragControl);
+            StopWindowDrag(ref reportDragControl);
+            StopWindowDrag(ref waveReportDragControl);
+            // Closed overlays must not keep blocking hover/clicks until a later repaint.
+            coverRects.Clear();
+            nextCoverRects.Clear();
             return anyOpen;
         }
 
@@ -234,6 +307,7 @@ namespace AntColony
         /// <summary>True if a screen position (pixels, y up, as the Input System gives it) is over a HUD panel or button.</summary>
         public bool IsPointerOverUi(Vector2 screenPosition)
         {
+            if (IsDraggingMissions || IsDraggingMusic || IsDraggingReport || IsDraggingWaveReport) return true;
             var guiPoint = new Vector2(screenPosition.x / guiScale, (Screen.height - screenPosition.y) / guiScale);
             foreach (Rect rect in uiRects)
             {
@@ -249,6 +323,7 @@ namespace AntColony
 
             // Whole screen pixels per frame pixel (rounded down, so the layout always fits).
             float scale = Mathf.Max(1f, Mathf.Floor(Screen.height / ReferenceHeight * FramePixel)) / FramePixel;
+            Matrix4x4 previousMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             float screenWidth = Screen.width / scale;
             screenHeight = Screen.height / scale;
@@ -267,7 +342,16 @@ namespace AntColony
                 anyButtonHovered = false;
                 nextCoverRects.Clear();
             }
+            bool wasEnabled = GUI.enabled;
+            if (HasConfirmation) GUI.enabled = false;
             DrawScreens(screenWidth, scale);
+            GUI.enabled = wasEnabled;
+            if (HasConfirmation)
+            {
+                drawingCover = drawingConfirmation = true;
+                DrawConfirmation(screenWidth);
+                drawingConfirmation = false;
+            }
             drawingCover = false;
             if (repaint)
             {
@@ -280,6 +364,7 @@ namespace AntColony
                 if (playing) DrawAntCard();
                 hoverParticles?.Draw();
             }
+            GUI.matrix = previousMatrix;
         }
 
         void DrawScreens(float screenWidth, float scale)
@@ -303,14 +388,17 @@ namespace AntColony
             DrawResourcePanel();
             DrawWaveBanner(screenWidth);
             DrawBossBar(screenWidth);
-            float musicBottom = DrawMusicPicker(screenWidth);
-            DrawAdvisorCard(screenWidth, musicBottom + Margin);
+            float advisorBottom = DrawAdvisorCard(screenWidth, Margin);
+            DrawMusicControls(screenWidth, advisorBottom > Margin ? advisorBottom + 8f : Margin);
             DrawEnemyWarnings(screenWidth);
             DrawMessage(screenWidth);
 
             if (game.State != GameState.Playing)
             {
                 DrawEndScreen(screenWidth);
+                drawingCover = true;
+                if (showWaveReport) DrawWaveReport(screenWidth);
+                drawingCover = false;
                 return;
             }
             if (game.IsPaused)
@@ -318,6 +406,8 @@ namespace AntColony
                 DrawPauseScreen(screenWidth);
                 drawingCover = true;
                 if (showSound) DrawSound(screenWidth);
+                if (showMusic) DrawMusicWindow(screenWidth);
+                if (showWaveReport) DrawWaveReport(screenWidth);
                 drawingCover = false;
                 return;
             }
@@ -340,20 +430,34 @@ namespace AntColony
             if (showReport) DrawReport(screenWidth);
             if (showHelp) DrawHelp(screenWidth);
             if (showMissions) DrawMissions(screenWidth);
-            if (showTrackList) DrawTrackList(screenWidth);
+            if (showMusic) DrawMusicWindow(screenWidth);
+            if (showWaveReport) DrawWaveReport(screenWidth);
             drawingCover = false;
         }
 
         /// <summary>True if the mouse is over <paramref name="rect"/> and not over a panel drawn on top of it.</summary>
         bool MouseOver(Rect rect)
         {
-            Vector2 mouse = Event.current.mousePosition;
-            return rect.Contains(mouse) && !IsCovered(mouse);
+            Vector2 mouse = PointerPosition();
+            return GUI.enabled && rect.Contains(mouse) && !IsCovered(mouse);
+        }
+
+        Vector2 PointerPosition()
+        {
+            // IMGUI repaint events can retain an old pointer after focusing/resizing the Game view.
+            // Use the same current Input System position as world input, converted to this GUI's scale.
+            if (Mouse.current == null) return Event.current.mousePosition;
+            Vector2 position = Mouse.current.position.ReadValue();
+            return new Vector2(position.x / guiScale, (Screen.height - position.y) / guiScale);
         }
 
         bool IsCovered(Vector2 point)
         {
+            if (HasConfirmation && !drawingConfirmation) return true;
             if (drawingCover) return false;
+            if (game.Tutorial != null && game.Tutorial.ShowingPopup) return true;
+            if (!showReport && !showHelp && !showMissions && !showSound && !showMusic && !showWaveReport
+                && (game.Tutorial == null || !game.Tutorial.ShowingPopup)) return false;
             foreach (Rect cover in coverRects)
             {
                 if (cover.Contains(point)) return true;
@@ -364,7 +468,7 @@ namespace AntColony
         /// <summary>An invisible-or-styled button that ignores clicks landing on a panel drawn over it.</summary>
         bool HudButton(Rect rect, GUIStyle style)
         {
-            bool covered = IsCovered(Event.current.mousePosition);
+            bool covered = IsCovered(PointerPosition());
             bool wasEnabled = GUI.enabled;
             if (covered) GUI.enabled = false;
             bool clicked = GUI.Button(rect, GUIContent.none, style);
@@ -619,6 +723,105 @@ namespace AntColony
 
             bool blink = underAttack && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.4f;
             Text(new Rect(panel.x + 32f, panel.y, panel.width - 40f, panel.height), text, blink ? Cream : underAttack ? Bad : Cream, small, TextAnchor.MiddleCenter);
+            if (MouseOver(panel)) Outline(panel, Gold, 1f);
+            if (HudButton(panel, GUIStyle.none))
+            {
+                bool open = !showWaveReport;
+                ClosePanels();
+                showWaveReport = open;
+                if (open) selectedReportWave = waves.CurrentWave;
+            }
+        }
+
+        /// <summary>Illustrated battle cards. Only waves that have already started can be browsed.</summary>
+        void DrawWaveReport(float screenWidth)
+        {
+            WaveSpawner waves = game.Waves;
+            float width = Mathf.Min(680f, screenWidth - Margin * 2f);
+            float height = Mathf.Min(500f, screenHeight - Margin * 2f);
+            if (!waveReportPositionSet)
+            {
+                waveReportPosition = new Vector2((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f);
+                waveReportPositionSet = true;
+            }
+            var panel = new Rect(waveReportPosition.x, waveReportPosition.y, width, height);
+            DragWindow(ref panel, screenWidth, "WaveReportDrag", ref waveReportDragControl, ref waveReportDragOffset);
+            waveReportPosition = panel.position;
+            Panel(panel);
+            Text(new Rect(panel.x + 18f, panel.y + 14f, width - 240f, 28f), "Wave report", Gold, large);
+            Text(new Rect(panel.xMax - 212f, panel.y + 20f, 160f, 16f), "Drag title to move", Muted, small, TextAnchor.MiddleRight);
+            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 12f, 28f, 28f))) { ClosePanels(); return; }
+
+            int lastStarted = waves.CurrentWave;
+            if (lastStarted <= 0)
+            {
+                Icon(new Vector2(panel.center.x, panel.y + 164f), game.Art.AntHill, null, 100f);
+                Text(new Rect(panel.x + 24f, panel.y + 240f, width - 48f, 30f), "No battles yet", Gold, large, TextAnchor.MiddleCenter);
+                Text(new Rect(panel.x + 24f, panel.y + 286f, width - 48f, 56f),
+                    "Battle reports appear here when an attack starts.", Cream, medium, TextAnchor.UpperCenter);
+                return;
+            }
+            selectedReportWave = Mathf.Clamp(selectedReportWave, 1, lastStarted);
+            float navY = panel.y + 58f;
+            if (SmallButton(new Rect(panel.x + 18f, navY, 42f, 38f), "<", selectedReportWave > 1)) selectedReportWave--;
+            if (SmallButton(new Rect(panel.xMax - 60f, navY, 42f, 38f), ">", selectedReportWave < lastStarted)) selectedReportWave++;
+            WaveReportRecord record = waves.FindReport(selectedReportWave);
+            bool unknown = record == null;
+            bool partial = record != null && record.partial;
+            string status = unknown ? "History unavailable" : record.completed ? "Cleared" : "In progress";
+            Text(new Rect(panel.x + 68f, navY, width - 136f, 30f), $"Wave {selectedReportWave}", Gold, large, TextAnchor.MiddleCenter);
+            Text(new Rect(panel.x + 68f, navY + 32f, width - 136f, 18f), status,
+                record != null && record.completed ? Good : Muted, small, TextAnchor.MiddleCenter);
+
+            var battle = new Rect(panel.x + 18f, panel.y + 122f, width - 36f, 80f);
+            WoodBox(battle);
+            Icon(new Vector2(battle.x + 42f, battle.center.y), game.Art.Beetle.Walk[0], null, 48f);
+            float contentX = battle.x + 82f;
+            float contentWidth = battle.width - 98f;
+            float columnWidth = contentWidth * 0.5f;
+            Text(new Rect(contentX, battle.y + 10f, columnWidth, 18f), "Enemies defeated", Cream, small);
+            Text(new Rect(contentX, battle.y + 34f, columnWidth, 30f),
+                unknown ? "--" : record.kills.ToString() + (partial ? "+" : ""), Gold, large);
+            Text(new Rect(contentX + columnWidth, battle.y + 10f, columnWidth, 18f), "Enemies remaining", Cream, small);
+            Text(new Rect(contentX + columnWidth, battle.y + 34f, columnWidth, 30f),
+                waves.RemainingInWave(selectedReportWave).ToString(), Cream, large);
+
+            float gap = 12f;
+            float cardWidth = (width - 36f - gap) * 0.5f;
+            float cardHeight = Mathf.Max(70f, (height - 292f) * 0.5f);
+            float y = panel.y + 218f;
+            DrawWaveLossCard(new Rect(panel.x + 18f, y, cardWidth, cardHeight), "Soldier", record?.soldiersLost ?? 0, unknown, partial, SoldierTint);
+            DrawWaveLossCard(new Rect(panel.x + 18f + cardWidth + gap, y, cardWidth, cardHeight), "Spitter", record?.spittersLost ?? 0, unknown, partial, SpitterTint);
+            y += cardHeight + gap;
+            DrawWaveLossCard(new Rect(panel.x + 18f, y, cardWidth, cardHeight), "Worker", record?.workersLost ?? 0, unknown, partial, Color.white);
+            DrawWaveLossCard(new Rect(panel.x + 18f + cardWidth + gap, y, cardWidth, cardHeight), "Builder", record?.buildersLost ?? 0, unknown, partial, BuilderTint);
+
+            WaveReportRecord upkeep = waves.FindReport(0);
+            string note = unknown ? "This save does not contain the results of this battle."
+                : partial ? "'+' means counted since loading; earlier results are unavailable."
+                : "Combat losses belong to the attacking enemy's wave. Remaining includes arrivals.";
+            Text(new Rect(panel.x + 18f, panel.yMax - 48f, width - 36f, 20f), note, Muted, small);
+            Text(new Rect(panel.x + 18f, panel.yMax - 26f, width - 36f, 18f),
+                $"Non-combat losses this game: {upkeep?.TotalLosses ?? 0}   (starvation: {upkeep?.starved ?? 0})", Muted, small);
+        }
+
+        void DrawWaveLossCard(Rect card, string role, int losses, bool unknown, bool partial, Color tint)
+        {
+            WoodBox(card);
+            Texture2D portrait = null;
+            UiSkin skin = game.UiSkin;
+            if (skin != null && skin.musicPortraits != null)
+                foreach (UiSkin.MusicPortrait entry in skin.musicPortraits)
+                    if (entry != null && string.Equals(entry.caption, role, StringComparison.OrdinalIgnoreCase))
+                    { portrait = entry.image; break; }
+            var image = new Rect(card.x + 8f, card.y + 8f, 68f, card.height - 16f);
+            if (portrait != null) GUI.DrawTexture(image, portrait, ScaleMode.ScaleToFit);
+            else Icon(image.center, game.Art.AntTop.Walk[0], tint, Mathf.Min(image.width, image.height));
+            float left = card.x + 88f;
+            float textWidth = card.width - 100f;
+            Text(new Rect(left, card.y + 12f, textWidth, 20f), role + " losses", Cream, small);
+            string value = unknown ? "--" : losses.ToString() + (partial ? "+" : "");
+            Text(new Rect(left, card.y + 42f, textWidth, 30f), value, losses > 0 ? Bad : Good, large);
         }
 
         /// <summary>While the final boss lives: its name and a big health bar under the wave banner.</summary>
@@ -638,19 +841,18 @@ namespace AntColony
         // ---------- Top right: advice ----------
 
         /// <summary>Only the advisor's most important tip, with a hint that the report has the rest.</summary>
-        void DrawAdvisorCard(float screenWidth, float top)
+        float DrawAdvisorCard(float screenWidth, float top)
         {
             // Only real problems get a card; calm advice waits in the report.
             IReadOnlyList<Advisor.Tip> tips = game.Colony.Advisor.Tips;
-            if (tips.Count == 0 || tips[0].Urgency == Advisor.Urgency.Info) return;
+            if (tips.Count == 0 || tips[0].Urgency == Advisor.Urgency.Info) return top;
 
             Advisor.Tip tip = tips[0];
             string footer = tips.Count > 1 ? $"R: report  (+{tips.Count - 1} more tips)" : "R: colony report";
             UiSkin skin = game.UiSkin;
             if (skin != null && skin.card != null)
             {
-                DrawParchmentAdvice(screenWidth, top, tip, footer, skin);
-                return;
+                return DrawParchmentAdvice(screenWidth, top, tip, footer, skin);
             }
 
             float innerWidth = SidePanelWidth - 44f;
@@ -663,10 +865,11 @@ namespace AntColony
             Text(new Rect(panel.x + 10f, panel.y + 8f, 20f, 20f), mark, color, large, TextAnchor.UpperCenter);
             Text(new Rect(panel.x + 34f, panel.y + 9f, innerWidth, textHeight), tip.Text, color, small);
             Text(new Rect(panel.x + 34f, panel.y + 12f + textHeight, innerWidth, 14f), footer, Muted, small);
+            return panel.yMax;
         }
 
         /// <summary>The advisor's tip on the parchment card, in dark ink, with the warning sign beside it.</summary>
-        void DrawParchmentAdvice(float screenWidth, float top, Advisor.Tip tip, string footer, UiSkin skin)
+        float DrawParchmentAdvice(float screenWidth, float top, Advisor.Tip tip, string footer, UiSkin skin)
         {
             const float padding = 16f;
             const float iconColumn = 26f;
@@ -694,6 +897,7 @@ namespace AntColony
 
             InkText(new Rect(textX, panel.y + padding, innerWidth, textHeight), tip.Text, color, small);
             InkText(new Rect(textX, panel.y + padding + textHeight + 8f, innerWidth, 14f), footer, InkMuted, small);
+            return panel.yMax;
         }
 
         static Color TipColor(Advisor.Urgency urgency)
@@ -905,7 +1109,7 @@ namespace AntColony
 
             bool hovered = MouseOver(rect);
             if (hovered) NoteHover(rect);
-            bool pressed = hovered && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            bool pressed = hovered && GUIUtility.hotControl != 0 && Mouse.current != null && Mouse.current.leftButton.isPressed;
             float sink = pressed ? FramePixel : -FramePixel; // the raised frame has a thick bottom shadow
             float alpha = action.Available || action.Active ? 1f : 0.55f;
 
@@ -975,7 +1179,7 @@ namespace AntColony
             UiSkin skin = game.UiSkin;
             bool mouseOver = MouseOver(rect);
             hovered = enabled && mouseOver;
-            pressed = hovered && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            pressed = hovered && GUIUtility.hotControl != 0 && Mouse.current != null && Mouse.current.leftButton.isPressed;
 
             bool wide = rect.width > rect.height * 1.4f;
             Texture2D texture = skin.slotNormal;
@@ -989,7 +1193,10 @@ namespace AntColony
             else NineSlice(rect, texture, skin.slotBorder, Mathf.Min(rect.width, rect.height) / texture.height);
             GUI.color = previous;
 
+            bool previousEnabled = GUI.enabled;
+            GUI.enabled = previousEnabled && (enabled || lockedLook);
             bool clicked = HudButton(rect, GUIStyle.none);
+            GUI.enabled = previousEnabled;
             return clicked && (enabled || lockedLook);
         }
 
@@ -1002,7 +1209,7 @@ namespace AntColony
             UiSkin skin = game.UiSkin;
             bool mouseOver = MouseOver(rect);
             hovered = enabled && mouseOver;
-            pressed = hovered && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            pressed = hovered && GUIUtility.hotControl != 0 && Mouse.current != null && Mouse.current.leftButton.isPressed;
 
             Texture2D texture = skin.menuButton;
             if (pressed && skin.menuButtonPressed != null) texture = skin.menuButtonPressed;
@@ -1018,14 +1225,18 @@ namespace AntColony
             GUI.color = previous;
 
             if (hovered) NoteHover(rect);
-            return HudButton(rect, GUIStyle.none) && enabled;
+            bool previousEnabled = GUI.enabled;
+            GUI.enabled = previousEnabled && enabled;
+            bool clicked = HudButton(rect, GUIStyle.none);
+            GUI.enabled = previousEnabled;
+            return clicked && enabled;
         }
 
         /// <summary>
         /// Called for the button under the mouse while repainting. When the mouse has just moved onto it, the hover
         /// particles start at both of its sides, the right one mirrored.
         /// </summary>
-        void NoteHover(Rect rect)
+        void NoteHover(Rect rect, bool particles = true)
         {
             if (Event.current.type != EventType.Repaint) return;
             anyButtonHovered = true;
@@ -1034,7 +1245,7 @@ namespace AntColony
             if (game.Audio != null) game.Audio.Play(Sound.UiHover);
 
             UiSkin skin = game.UiSkin;
-            if (skin == null || skin.buttonHoverParticles == null || hoverParticleCooldown > 0f || hoverParticles == null) return;
+            if (!particles || skin == null || skin.buttonHoverParticles == null || hoverParticleCooldown > 0f || hoverParticles == null) return;
             hoverParticleCooldown = skin.buttonHoverParticleCooldown;
             float y = rect.y + rect.height * 0.3f;
             hoverParticles.Play(skin.buttonHoverParticles, new Vector2(rect.x + 4f, y), skin.buttonHoverParticleScale);
@@ -1097,11 +1308,25 @@ namespace AntColony
 
             const float width = 600f;
             const float height = 470f;
-            var panel = new Rect((screenWidth - width) * 0.5f, 92f, width, height);
+            if (!reportPositionSet)
+            {
+                reportPosition = new Vector2((screenWidth - width) * 0.5f,
+                    game.Tutorial != null && game.Tutorial.IsActive ? 228f : 92f);
+                reportPositionSet = true;
+            }
+            var panel = new Rect(reportPosition.x, reportPosition.y, width, height);
+            DragWindow(ref panel, screenWidth, "ReportDrag", ref reportDragControl, ref reportDragOffset);
+            reportPosition = panel.position;
             Panel(panel);
 
-            Text(new Rect(panel.x + 16f, panel.y + 12f, width, 24f), "Colony report", Gold, large);
-            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 10f, 28f, 28f))) showReport = false;
+            Text(new Rect(panel.x + 16f, panel.y + 12f, width - 240f, 24f), "Colony report", Gold, large);
+            Text(new Rect(panel.xMax - 212f, panel.y + 18f, 160f, 16f), "Drag title to move", Muted, small, TextAnchor.MiddleRight);
+            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 10f, 28f, 28f)))
+            {
+                showReport = false;
+                StopWindowDrag(ref reportDragControl);
+            }
+
 
             float columnWidth = (width - 48f) * 0.5f;
             float left = panel.x + 16f;
@@ -1247,18 +1472,65 @@ namespace AntColony
         {
             const float width = 580f;
             // Measure first (rows grow with their descriptions), then draw.
-            var panel = new Rect((screenWidth - width) * 0.5f, 92f, width, 0f);
+            if (!missionsPositionSet)
+            {
+                // The guide occupies y=96..212; open below it during a tutorial.
+                float top = game.Tutorial != null && game.Tutorial.IsActive ? 228f : 92f;
+                missionsPosition = new Vector2((screenWidth - width) * 0.5f, top);
+                missionsPositionSet = true;
+            }
+            var panel = new Rect(missionsPosition.x, missionsPosition.y, width, 0f);
             float contentBottom = MissionSection(panel, panel.y + 52f, "Workers", AntRole.Worker, Missions.WorkerMissions, Color.white, draw: false);
             contentBottom = MissionSection(panel, contentBottom + 6f, "Builders", AntRole.Builder, Missions.BuilderMissions, BuilderTint, draw: false);
             panel.height = contentBottom - panel.y + 10f;
+            DragWindow(ref panel, screenWidth, "MissionsDrag", ref missionsDragControl, ref missionsDragOffset);
+            missionsPosition = panel.position;
             Panel(panel);
 
-            Text(new Rect(panel.x + 16f, panel.y + 12f, width - 70f, 24f), "Missions", Gold, large);
-            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 10f, 28f, 28f))) showMissions = false;
+            Text(new Rect(panel.x + 16f, panel.y + 12f, width - 240f, 24f), "Missions", Gold, large);
+            Text(new Rect(panel.xMax - 212f, panel.y + 18f, 160f, 16f), "Drag title to move", Muted, small, TextAnchor.MiddleRight);
+            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 10f, 28f, 28f)))
+            {
+                showMissions = false;
+                StopMissionsDrag();
+            }
 
             float y = panel.y + 52f;
             y = MissionSection(panel, y, "Workers", AntRole.Worker, Missions.WorkerMissions, Color.white, draw: true);
             MissionSection(panel, y + 6f, "Builders", AntRole.Builder, Missions.BuilderMissions, BuilderTint, draw: true);
+        }
+
+        void DragWindow(ref Rect panel, float screenWidth, string controlName, ref int dragControl, ref Vector2 dragOffset)
+        {
+            int control = GUIUtility.GetControlID(controlName.GetHashCode(), FocusType.Passive);
+            Event input = Event.current;
+            Vector2 mouse = PointerPosition();
+            var title = new Rect(panel.x, panel.y, panel.width - 48f, 44f);
+            if (GUI.enabled && !HasConfirmation && input.type == EventType.MouseDown && input.button == 0 && title.Contains(mouse))
+            {
+                GUIUtility.hotControl = dragControl = control;
+                dragOffset = mouse - panel.position;
+                input.Use();
+            }
+            if (dragControl != 0 && GUIUtility.hotControl == dragControl)
+            {
+                if (input.type == EventType.MouseDrag)
+                {
+                    panel.position = mouse - dragOffset;
+                    input.Use();
+                }
+                else if (input.type == EventType.MouseUp && input.button == 0)
+                {
+                    StopWindowDrag(ref dragControl);
+                    input.Use();
+                }
+                // While captured, releasing outside the window must not command units.
+                uiRects.Add(new Rect(0f, 0f, screenWidth, screenHeight));
+            }
+            else dragControl = 0;
+            panel.x = Mathf.Clamp(panel.x, Margin, Mathf.Max(Margin, screenWidth - panel.width - Margin));
+            panel.y = Mathf.Clamp(panel.y, Margin, Mathf.Max(Margin, screenHeight - panel.height - Margin));
+            panel = Snap(panel);
         }
 
         /// <summary>One caste's missions. With <paramref name="draw"/> false it only measures; returns the y below it.</summary>
@@ -1323,67 +1595,75 @@ namespace AntColony
         /// <summary>Buttons this narrow or narrower make no click sound.</summary>
         const float SilentButtonSize = 40f;
 
-        const float MusicPickerWidth = 290f;
-        const float MusicPickerHeight = 50f;
-        const float WaveMusicRowHeight = 22f;
-
-        /// <summary>
-        /// A small bar in the top right: previous / next playlist track, its name, and a button that lists the whole
-        /// playlist; under it a tick to turn the wave music (warning, battle, wave cleared) off.
-        /// Returns the y below it (where the advisor card goes).
-        /// </summary>
-        float DrawMusicPicker(float screenWidth)
+        /// <summary>Two compact HUD buttons; the playlist and wave option live in the music window.</summary>
+        float DrawMusicControls(float screenWidth, float top)
         {
-            AudioManager audio = game.Audio;
-            if (audio == null || audio.Playlist.Length == 0 || game.IsPaused || game.State != GameState.Playing)
+            if (game.State != GameState.Playing) return 0f;
+            const float width = 34f;
+            const float height = 34f;
+            const float gap = 8f;
+            float x = screenWidth - Margin - width * 2f - gap;
+            var music = Snap(new Rect(x, top, width, height));
+            var pause = Snap(new Rect(x + width + gap, top, width, height));
+            uiRects.Add(music);
+            uiRects.Add(pause);
+            if (HudIconButton(music, MusicGlyph, game.Audio != null, showMusic))
             {
-                showTrackList = false;
-                return 0f;
+                bool open = !showMusic;
+                ClosePanels();
+                showMusic = open;
+                if (open) musicFirstTrack = Mathf.Max(0, game.Audio.PlaylistTrack - 2);
             }
-
-            var bar = Snap(new Rect(screenWidth - Margin - MusicPickerWidth, Margin, MusicPickerWidth, MusicPickerHeight));
-            Rect inner = MusicBarBackground(bar);
-
-            const float button = 26f;
-            float y = Mathf.Round(inner.center.y - button * 0.5f);
-            AudioClip[] playlist = audio.Playlist;
-            int track = audio.PlaylistTrack;
-
-            if (SmallButton(new Rect(inner.x, y, button, button), "<", true)) audio.PickTrack(track < 0 ? 0 : track - 1);
-            if (SmallButton(new Rect(inner.xMax - button * 2f - 4f, y, button, button), ">", true)) audio.PickTrack(track + 1);
-            if (SmallButton(new Rect(inner.xMax - button, y, button, button), showTrackList ? "^" : "=", true)) showTrackList = !showTrackList;
-
-            // The playlist track's name; while battle or other music plays, the picked track waits (shown dimmed).
-            string name = track >= 0 && track < playlist.Length && playlist[track] != null ? PrettyTrackName(playlist[track].name) : "Playlist";
-            Color color = audio.PlaylistPlaying ? Cream : Muted;
-            var nameRect = new Rect(inner.x + button + 4f, inner.y, inner.width - button * 3f - 12f, inner.height);
-            Text(nameRect, name, color, small, TextAnchor.MiddleCenter);
-
-            // The wave music tick, right under the bar.
-            var tickRow = Snap(new Rect(bar.xMax - 150f, bar.yMax + 2f, 150f, WaveMusicRowHeight));
-            if (Tick(tickRow, "Wave music", audio.WaveMusic)) audio.SetWaveMusic(!audio.WaveMusic);
-            return tickRow.yMax;
+            if (HudIconButton(pause, game.IsPaused ? PlayGlyph : PauseGlyph, true, game.IsPaused))
+            {
+                ClosePanels();
+                game.TogglePause();
+            }
+            return top + height;
         }
 
-        /// <summary>
-        /// The music bar's background: the menu button plank if the skin has one (its twiggy ends kept, the middle
-        /// stretched), otherwise a panel. Returns the inner area where the buttons and the name go.
-        /// </summary>
-        Rect MusicBarBackground(Rect bar)
+        // Code-drawn pixel icons stay crisp and do not depend on font glyph availability.
+        static readonly string[] MusicGlyph =
         {
-            UiSkin skin = game.UiSkin;
-            uiRects.Add(bar);
-            if (skin != null && skin.menuButton != null)
-            {
-                Texture2D plank = skin.menuButton;
-                float pixel = bar.height / plank.height;
-                NineSlice(bar, plank, new Vector4(skin.menuButtonBorder.x, skin.menuButtonBorder.y, 0f, 0f), pixel);
-                // The plank's flat face, inside its frame (measured on the image).
-                return Rect.MinMaxRect(bar.x + 30f * pixel * 1.6f, bar.y + 42f * pixel, bar.xMax - 34f * pixel * 1.6f, bar.y + 150f * pixel);
-            }
+            "....########", "....########", "....##....##", "....##....##",
+            "....##....##", "....##....##", "....##....##", "..####..####",
+            ".#####.#####", ".####..####.", "............", "............"
+        };
+        static readonly string[] PauseGlyph =
+        {
+            ".###..###.", ".###..###.", ".###..###.", ".###..###.", ".###..###.",
+            ".###..###.", ".###..###.", ".###..###.", ".###..###.", ".###..###."
+        };
+        static readonly string[] PlayGlyph =
+        {
+            "..#.......", "..##......", "..###.....", "..####....", "..#####...",
+            "..#####...", "..####....", "..###.....", "..##......", "..#......."
+        };
 
-            Panel(bar);
-            return new Rect(bar.x + 6f, bar.y + 4f, bar.width - 12f, bar.height - 8f);
+        bool HudIconButton(Rect rect, string[] glyph, bool enabled, bool active)
+        {
+            bool clicked;
+            bool held;
+            if (game.UiSkin != null && game.UiSkin.HasSlots)
+                clicked = SlotButton(rect, enabled, active, lockedLook: false, out _, out held);
+            else
+            {
+                bool previous = GUI.enabled;
+                GUI.enabled = previous && enabled;
+                clicked = HudButton(rect, buttonStyle);
+                held = MouseOver(rect) && GUIUtility.hotControl != 0;
+                GUI.enabled = previous;
+            }
+            if (enabled && MouseOver(rect)) NoteHover(rect, particles: false);
+            float pixel = Mathf.Max(1f, Mathf.Floor(Mathf.Min((rect.width - 14f) / glyph[0].Length,
+                (rect.height - 14f) / glyph.Length) * guiScale)) / guiScale;
+            float left = rect.center.x - glyph[0].Length * pixel * 0.5f;
+            float top = rect.center.y - glyph.Length * pixel * 0.5f + (held ? pixel : 0f);
+            for (int row = 0; row < glyph.Length; row++)
+                for (int column = 0; column < glyph[row].Length; column++)
+                    if (glyph[row][column] == '#')
+                        FillRect(Snap(new Rect(left + column * pixel, top + row * pixel, pixel, pixel)), enabled ? Cream : Muted);
+            return clicked;
         }
 
         /// <summary>A tick box with a label on a dark strip. Returns true when clicked.</summary>
@@ -1412,38 +1692,130 @@ namespace AntColony
             return HudButton(rect, GUIStyle.none);
         }
 
-        /// <summary>Every playlist track under the music picker; click one to play it.</summary>
-        void DrawTrackList(float screenWidth)
+        /// <summary>A centred music player. Selecting a track keeps the window open.</summary>
+        void DrawMusicWindow(float screenWidth)
         {
             AudioManager audio = game.Audio;
+            if (audio == null) { showMusic = false; return; }
             AudioClip[] playlist = audio.Playlist;
-            const float rowHeight = 22f;
-            float top = Margin + MusicPickerHeight + WaveMusicRowHeight + 6f + (game.UiSkin != null && game.UiSkin.panel != null ? game.UiSkin.panelBleed : 0f);
-            var panel = new Rect(screenWidth - Margin - MusicPickerWidth, top, MusicPickerWidth, playlist.Length * rowHeight + 12f);
-            Panel(panel);
-
-            Vector2 mouse = Event.current.mousePosition;
-            for (int i = 0; i < playlist.Length; i++)
+            const float rowHeight = 28f;
+            UiSkin skin = game.UiSkin;
+            bool hasPortraits = skin != null && skin.musicPortraits != null && skin.musicPortraits.Length > 0;
+            float galleryWidth = hasPortraits && screenWidth >= 700f ? 200f : 0f;
+            float width = Mathf.Min(520f + galleryWidth, screenWidth - Margin * 2f);
+            float playerWidth = width - galleryWidth;
+            float height = Mathf.Min(232f + playlist.Length * rowHeight, screenHeight - Margin * 2f);
+            if (!musicPositionSet)
             {
+                musicPosition = new Vector2((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f);
+                musicPositionSet = true;
+            }
+            var panel = new Rect(musicPosition.x, musicPosition.y, width, height);
+            DragWindow(ref panel, screenWidth, "MusicDrag", ref musicDragControl, ref musicDragOffset);
+            musicPosition = panel.position;
+            Panel(panel);
+            Text(new Rect(panel.x + 18f, panel.y + 14f, width - 240f, 28f), "Music", Gold, large);
+            Text(new Rect(panel.xMax - 212f, panel.y + 20f, 160f, 16f), "Drag title to move", Muted, small, TextAnchor.MiddleRight);
+            if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 12f, 28f, 28f)))
+            {
+                ClosePanels();
+                return;
+            }
+
+            string playing = audio.NowPlaying != null ? PrettyTrackName(audio.NowPlaying.name) : "No track playing";
+            Text(new Rect(panel.x + 18f, panel.y + 52f, playerWidth - 36f, 20f), "Now playing: " + playing, Cream, medium);
+            string status = audio.Muted ? "Audio is muted in Settings."
+                : audio.PlaylistPlaying ? "Choose a track below."
+                : "Event music is playing; your selection resumes afterwards.";
+            Text(new Rect(panel.x + 18f, panel.y + 78f, playerWidth - 36f, 26f), status, Muted, small);
+            float half = (playerWidth - 44f) * 0.5f;
+            bool hasTracks = playlist.Length > 0;
+            if (SmallButton(new Rect(panel.x + 18f, panel.y + 110f, half, 34f), "< Previous", hasTracks))
+            {
+                audio.PickTrack(audio.PlaylistTrack < 0 ? 0 : audio.PlaylistTrack - 1);
+                musicFirstTrack = Mathf.Max(0, audio.PlaylistTrack - 2);
+            }
+            if (SmallButton(new Rect(panel.x + 26f + half, panel.y + 110f, half, 34f), "Next >", hasTracks))
+            {
+                audio.PickTrack(audio.PlaylistTrack + 1);
+                musicFirstTrack = Mathf.Max(0, audio.PlaylistTrack - 2);
+            }
+            if (Tick(new Rect(panel.x + 18f, panel.y + 154f, playerWidth - 36f, 28f), "Wave music", audio.WaveMusic))
+                audio.SetWaveMusic(!audio.WaveMusic);
+
+            float top = panel.y + 192f;
+            int visibleRows = Mathf.Max(1, Mathf.FloorToInt((panel.yMax - 40f - top) / rowHeight));
+            int maxFirst = Mathf.Max(0, playlist.Length - visibleRows);
+            musicFirstTrack = Mathf.Clamp(musicFirstTrack, 0, maxFirst);
+            if (Event.current.type == EventType.ScrollWheel && panel.Contains(PointerPosition()))
+            {
+                musicFirstTrack = Mathf.Clamp(musicFirstTrack + (Event.current.delta.y > 0f ? 1 : -1), 0, maxFirst);
+                Event.current.Use();
+            }
+            if (!hasTracks)
+                Text(new Rect(panel.x + 18f, top, playerWidth - 36f, 24f), "No colony tracks available.", Muted, small);
+            for (int slot = 0; slot < visibleRows && musicFirstTrack + slot < playlist.Length; slot++)
+            {
+                int i = musicFirstTrack + slot;
                 if (playlist[i] == null) continue;
-                var row = new Rect(panel.x + 6f, panel.y + 6f + i * rowHeight, panel.width - 12f, rowHeight);
+                var row = Snap(new Rect(panel.x + 18f, top + slot * rowHeight, playerWidth - 36f, rowHeight));
                 bool current = i == audio.PlaylistTrack;
-                bool hovered = row.Contains(mouse);
+                bool hovered = MouseOver(row);
                 if (current || hovered)
                 {
                     Color previous = GUI.color;
                     GUI.color = current ? new Color(1f, 0.8f, 0.3f, 0.25f) : new Color(1f, 1f, 1f, 0.1f);
-                    GUI.DrawTexture(Snap(row), Texture2D.whiteTexture);
+                    GUI.DrawTexture(row, Texture2D.whiteTexture);
                     GUI.color = previous;
                 }
                 Text(new Rect(row.x + 8f, row.y, row.width - 16f, row.height), $"{i + 1}. {PrettyTrackName(playlist[i].name)}",
                     current ? Gold : hovered ? Color.white : Cream, small, TextAnchor.MiddleLeft);
-                if (HudButton(row, GUIStyle.none))
-                {
-                    audio.PickTrack(i);
-                    showTrackList = false;
-                }
+                if (HudButton(row, GUIStyle.none)) audio.PickTrack(i);
             }
+            if (galleryWidth > 0f)
+                DrawMusicGallery(new Rect(panel.x + playerWidth + 4f, panel.y + 52f, galleryWidth - 22f, height - 70f), audio, skin);
+            if (maxFirst > 0)
+            {
+                float y = panel.yMax - 32f;
+                if (SmallButton(new Rect(panel.x + 18f, y, 32f, 26f), "^", musicFirstTrack > 0)) musicFirstTrack--;
+                if (SmallButton(new Rect(panel.x + playerWidth - 50f, y, 32f, 26f), "v", musicFirstTrack < maxFirst)) musicFirstTrack++;
+                Text(new Rect(panel.x + 56f, y, playerWidth - 112f, 26f),
+                    $"{musicFirstTrack + 1}-{Mathf.Min(playlist.Length, musicFirstTrack + visibleRows)} / {playlist.Length}   (scroll)",
+                    Muted, small, TextAnchor.MiddleCenter);
+            }
+        }
+
+        void DrawMusicGallery(Rect area, AudioManager audio, UiSkin skin)
+        {
+            UiSkin.MusicPortrait[] portraits = skin.musicPortraits;
+            AudioClip track = audio.NowPlaying;
+            if (portraitIndex < 0 || portraitTrack != track || portraitSelection != audio.PlaylistTrack)
+            {
+                previousPortrait = portraitIndex;
+                portraitIndex = (portraitIndex + 1) % portraits.Length;
+                portraitTrack = track;
+                portraitSelection = audio.PlaylistTrack;
+                portraitChangedAt = Time.unscaledTime;
+            }
+            portraitIndex %= portraits.Length;
+            WoodBox(area);
+            Text(new Rect(area.x + 8f, area.y + 12f, area.width - 16f, 20f), "The colony", Gold, medium, TextAnchor.MiddleCenter);
+            var image = new Rect(area.x + 10f, area.y + 44f, area.width - 20f, area.height - 86f);
+            float blend = previousPortrait < 0 ? 1f : Mathf.Clamp01((Time.unscaledTime - portraitChangedAt) / 0.6f);
+            Color before = GUI.color;
+            if (previousPortrait >= 0 && previousPortrait < portraits.Length && portraits[previousPortrait]?.image != null)
+            {
+                GUI.color = new Color(before.r, before.g, before.b, before.a * (1f - blend));
+                GUI.DrawTexture(image, portraits[previousPortrait].image, ScaleMode.ScaleToFit);
+            }
+            UiSkin.MusicPortrait current = portraits[portraitIndex];
+            if (current?.image != null)
+            {
+                GUI.color = new Color(before.r, before.g, before.b, before.a * blend);
+                GUI.DrawTexture(image, current.image, ScaleMode.ScaleToFit);
+            }
+            GUI.color = before;
+            Text(new Rect(area.x + 8f, area.yMax - 32f, area.width - 16f, 20f), current?.caption ?? "", Cream, medium, TextAnchor.MiddleCenter);
         }
 
         // ---------- Tutorial ----------
@@ -1469,7 +1841,9 @@ namespace AntColony
             const float width = 480f;
             const float padding = 22f;
             float textWidth = width - padding * 2f;
-            float bodyHeight = font.MeasureHeight(step.Body, medium, textWidth);
+            string body = step.Body;
+            if (!tutorial.CanSkipStep) body += "\n\n" + tutorial.SkipExplanation;
+            float bodyHeight = font.MeasureHeight(body, medium, textWidth);
             bool hasGoal = !string.IsNullOrEmpty(step.Goal);
             float goalHeight = hasGoal ? font.MeasureHeight("Your goal: " + step.Goal, small, textWidth) + 12f : 0f;
             const float buttonHeight = 46f;
@@ -1482,7 +1856,7 @@ namespace AntColony
             Text(new Rect(x, y, textWidth - 60f, 32f), step.Title, Gold, large, TextAnchor.MiddleLeft);
             Text(new Rect(x, y, textWidth, 32f), $"{tutorial.StepNumber}/{tutorial.StepCount}", Muted, small, TextAnchor.MiddleRight);
             y += 42f;
-            y += Text(new Rect(x, y, textWidth, bodyHeight + 4f), step.Body, Cream, medium) + 14f;
+            y += Text(new Rect(x, y, textWidth, bodyHeight + 4f), body, Cream, medium) + 14f;
             if (hasGoal)
             {
                 Text(new Rect(x, y, textWidth, goalHeight), "Your goal: " + step.Goal, Good, small);
@@ -1490,8 +1864,10 @@ namespace AntColony
             }
 
             bool last = tutorial.StepNumber >= tutorial.StepCount;
-            if (!last && SmallButton(new Rect(x, y, 170f, buttonHeight - 6f), "Skip tutorial", true)) tutorial.Skip();
-            if (MenuButton(new Rect(panel.xMax - padding - 190f, y - 3f, 190f, buttonHeight), last ? "Let's go!" : "Got it")) tutorial.Continue();
+            float third = (textWidth - 16f) / 3f;
+            if (!last && SmallButton(new Rect(x, y, third, buttonHeight), "Skip tutorial", true)) { tutorial.Skip(); return; }
+            if (!last && SmallButton(new Rect(x + third + 8f, y, third, buttonHeight), tutorial.CanSkipStep ? "Skip step" : "Required step", tutorial.CanSkipStep && tutorial.CanContinue)) { tutorial.SkipStep(); return; }
+            if (SmallButton(new Rect(x + (third + 8f) * 2f, y, third, buttonHeight), last ? "Let's go!" : hasGoal ? "Try it" : "Continue", tutorial.CanContinue)) tutorial.Continue();
         }
 
         /// <summary>While the player works on a step: a small goal bar under the wave banner, and the matching button blinking.</summary>
@@ -1501,13 +1877,25 @@ namespace AntColony
             if (step == null || string.IsNullOrEmpty(step.Goal)) return;
 
             string label = $"Tutorial {tutorial.StepNumber}/{tutorial.StepCount}";
-            float width = Mathf.Max(300f, font.Measure(step.Goal, medium) + 40f);
+            float width = Mathf.Min(screenWidth - 2f * Margin, Mathf.Max(520f, font.Measure(step.Goal, medium) + 40f));
             // Under the wave banner and the line where messages appear.
-            var bar = Snap(new Rect((screenWidth - width) * 0.5f, Margin + 34f + 52f, width, 46f));
+            var bar = Snap(new Rect((screenWidth - width) * 0.5f, Margin + 34f + 52f, width, 116f));
             WoodBox(bar);
             uiRects.Add(bar);
             Text(new Rect(bar.x, bar.y + 6f, bar.width, 14f), label, Gold, small, TextAnchor.UpperCenter);
-            Text(new Rect(bar.x + 10f, bar.y + 20f, bar.width - 20f, 20f), step.Goal, Cream, medium, TextAnchor.MiddleCenter);
+            Text(new Rect(bar.x + 10f, bar.y + 20f, bar.width - 20f, 20f),
+                tutorial.GoalCompleted ? "Done! Take your time, then choose Next." : step.Goal,
+                tutorial.GoalCompleted ? Good : Cream, medium, TextAnchor.MiddleCenter);
+            Text(new Rect(bar.x + 10f, bar.y + 43f, bar.width - 20f, 30f), tutorial.ProgressHint, Muted, small, TextAnchor.UpperCenter);
+            float buttonWidth = (bar.width - 38f) / 4f;
+            float buttonX = bar.x + 10f;
+            if (SmallButton(new Rect(buttonX, bar.y + 76f, buttonWidth, 34f), "Read again", true)) { tutorial.Review(); return; }
+            buttonX += buttonWidth + 6f;
+            if (SmallButton(new Rect(buttonX, bar.y + 76f, buttonWidth, 34f), tutorial.CanSkipStep ? "Skip step" : "Required step", tutorial.CanSkipStep)) { tutorial.SkipStep(); return; }
+            buttonX += buttonWidth + 6f;
+            if (SmallButton(new Rect(buttonX, bar.y + 76f, buttonWidth, 34f), "Skip tutorial", true)) { tutorial.Skip(); return; }
+            buttonX += buttonWidth + 6f;
+            if (SmallButton(new Rect(buttonX, bar.y + 76f, buttonWidth, 34f), "Next", tutorial.GoalCompleted)) { tutorial.Advance(); return; }
 
             if (step.ShowsGatherDemo) DrawGatherDemo(tutorial.DemoFood);
 
@@ -1622,9 +2010,9 @@ namespace AntColony
 
             const float width = 420f;
             const float rowHeight = 44f;
-            var panel = new Rect((screenWidth - width) * 0.5f, Mathf.Max(60f, screenHeight * 0.5f - 150f), width, 52f + rowHeight * 3f + 92f);
+            var panel = new Rect((screenWidth - width) * 0.5f, Mathf.Max(60f, screenHeight * 0.5f - 150f), width, 52f + rowHeight * 3f + 160f);
             Panel(panel);
-            Text(new Rect(panel.x + 16f, panel.y + 12f, width - 70f, 24f), "Sound", Gold, large);
+            Text(new Rect(panel.x + 16f, panel.y + 12f, width - 70f, 24f), "Settings", Gold, large);
             if (CloseButton(new Rect(panel.xMax - 40f, panel.y + 10f, 28f, 28f))) showSound = false;
 
             float master = audio.PlayerMaster;
@@ -1642,6 +2030,11 @@ namespace AntColony
             AudioClip track = audio.NowPlaying;
             string trackName = track != null ? PrettyTrackName(track.name) : "-";
             Text(new Rect(panel.x + 16f, y + 46f, width - 32f, 14f), $"Now playing: {trackName}", Muted, small);
+            if (SmallButton(new Rect(panel.x + 16f, y + 70f, width - 32f, 36f),
+                "Autosave after waves: " + (game.AutoSaveAfterWave ? "ON" : "OFF"), true))
+                game.SetAutoSaveAfterWave(!game.AutoSaveAfterWave);
+            Text(new Rect(panel.x + 16f, y + 112f, width - 32f, 24f),
+                "Uses the same slot as Save game. F5 still saves manually.", Muted, small);
         }
 
         /// <summary>A label, a bar and - / + buttons. Returns the new volume.</summary>
@@ -2166,7 +2559,7 @@ namespace AntColony
             float height = planks ? 54f : 48f;
             float x = screenWidth * 0.5f - width * 0.5f;
             if (MenuButton(new Rect(x, centerY + 46f, width, height), "Play again  [R]"))
-                game.Restart();
+                RequestNewGame();
             if (MenuButton(new Rect(x, centerY + 56f + height, width, height), "Main menu"))
                 game.OpenMainMenu();
         }
@@ -2210,14 +2603,14 @@ namespace AntColony
             }
 
             float half = (buttonWidth - gap) * 0.5f;
-            if (MenuButton(new Rect(x, y, half, buttonHeight), "New game")) game.StartNewGame();
-            if (MenuButton(new Rect(x + half + gap, y, half, buttonHeight), "Tutorial")) game.StartNewGame(withTutorial: true);
+            if (MenuButton(new Rect(x, y, half, buttonHeight), "New game")) RequestNewGame();
+            if (MenuButton(new Rect(x + half + gap, y, half, buttonHeight), "Tutorial")) RequestNewGame(tutorial: true);
             y += buttonHeight + gap;
             if (SmallButton(new Rect(x, y, buttonWidth, buttonHeight), "Continue", game.HasSave)) game.LoadGame();
             y += buttonHeight + gap;
             if (MenuButton(new Rect(x, y, buttonWidth, buttonHeight), "How to play")) ToggleHelp();
             y += buttonHeight + gap;
-            if (MenuButton(new Rect(x, y, buttonWidth, buttonHeight), "Sound")) ToggleSound();
+            if (MenuButton(new Rect(x, y, buttonWidth, buttonHeight), "Settings")) ToggleSound();
             y += buttonHeight + gap;
             if (MenuButton(new Rect(x, y, buttonWidth, buttonHeight), "Quit")) game.QuitGame();
             y += buttonHeight + gap + 6f;
@@ -2225,6 +2618,46 @@ namespace AntColony
             Text(new Rect(0f, y, screenWidth, 14f), "In game:  F5 save   F9 load   Esc pause", Muted, small, TextAnchor.UpperCenter);
             if (game.Message.Length > 0 && game.MessageVisibility > 0f)
                 Text(new Rect(0f, y + 22f, screenWidth, 14f), game.Message, Bad, small, TextAnchor.UpperCenter);
+        }
+
+        void DrawConfirmation(float screenWidth)
+        {
+            DrawDarkOverlay(screenWidth);
+            uiRects.Add(new Rect(0f, 0f, screenWidth, screenHeight));
+            var panel = new Rect((screenWidth - 500f) * 0.5f, Mathf.Max(12f, (screenHeight - 350f) * 0.5f), 500f, 350f);
+            Panel(panel);
+            bool leaving = confirmation == Confirmation.MainMenu;
+            Text(new Rect(panel.x + 20f, panel.y + 20f, 460f, 32f),
+                leaving ? "Return to main menu?" : "Replace saved colony?", Gold, large);
+            string body = leaving
+                ? "Progress since your last save will be lost. Save your colony before leaving?"
+                : "Starting a new game or tutorial replaces your saved colony. You will no longer be able to continue that game.";
+            Text(new Rect(panel.x + 20f, panel.y + 65f, 460f, 80f), body, Cream, medium);
+            float y = panel.y + 150f;
+            if (MenuButton(new Rect(panel.x + 20f, y, 460f, 44f), leaving ? "Save and return" : "Replace and start"))
+            {
+                if (leaving)
+                {
+                    if (game.SaveGame()) { CancelConfirmation(); game.OpenMainMenu(); return; }
+                    confirmationError = "Save failed. Your game is still open. Try again or cancel.";
+                }
+                else
+                {
+                    bool tutorial = confirmation == Confirmation.Tutorial;
+                    CancelConfirmation();
+                    game.StartNewGame(tutorial);
+                    return;
+                }
+            }
+            y += 54f;
+            if (leaving && MenuButton(new Rect(panel.x + 20f, y, 460f, 44f), "Leave without saving"))
+            {
+                CancelConfirmation(); game.OpenMainMenu(); return;
+            }
+            if (leaving) y += 54f;
+            if (MenuButton(new Rect(panel.x + 20f, y, 460f, 44f), "Cancel  [Esc]")) CancelConfirmation();
+            if (!string.IsNullOrEmpty(confirmationError))
+                Text(new Rect(panel.x + 20f, panel.yMax - 34f, 460f, 30f), confirmationError, Bad, small);
         }
 
         void DrawPauseScreen(float screenWidth)
@@ -2245,11 +2678,11 @@ namespace AntColony
             y += height + 10f;
             if (MenuButton(new Rect(x, y, width, height), "Save game  [F5]")) game.SaveGame();
             y += height + 10f;
-            if (MenuButton(new Rect(x, y, width, height), "Sound")) ToggleSound();
+            if (MenuButton(new Rect(x, y, width, height), "Settings")) ToggleSound();
             y += height + 10f;
             if (SmallButton(new Rect(x, y, width, height), "Load game  [F9]", game.HasSave)) game.LoadGame();
             y += height + 10f;
-            if (MenuButton(new Rect(x, y, width, height), "Main menu")) game.OpenMainMenu();
+            if (MenuButton(new Rect(x, y, width, height), "Main menu")) RequestMainMenu();
             Text(new Rect(0f, y + height + 8f, screenWidth, 14f), "Unsaved progress is lost when you leave.", Muted, small, TextAnchor.UpperCenter);
             if (game.Message.Length > 0 && game.MessageVisibility > 0f)
                 Text(new Rect(0f, y + height + 28f, screenWidth, 14f), game.Message, Cream, small, TextAnchor.UpperCenter);
@@ -2289,7 +2722,7 @@ namespace AntColony
             if (game.UiSkin != null && (game.UiSkin.HasSlots || game.UiSkin.HasMenuButtons)) return SmallButton(rect, label, true);
             bool clicked = HudButton(rect, buttonStyle);
             if (MouseOver(rect)) NoteHover(rect);
-            bool pressed = MouseOver(rect) && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            bool pressed = MouseOver(rect) && GUIUtility.hotControl != 0 && Mouse.current != null && Mouse.current.leftButton.isPressed;
             var face = new Rect(rect.x, rect.y + (pressed ? FramePixel : -FramePixel), rect.width, rect.height);
             Text(face, label, Cream, medium, TextAnchor.MiddleCenter);
             return clicked;
@@ -2429,7 +2862,7 @@ namespace AntColony
             }
             bool clicked = HudButton(rect, enabled ? buttonStyle : disabledButtonStyle);
             if (enabled && wide && MouseOver(rect)) NoteHover(rect);
-            bool pressed = enabled && MouseOver(rect) && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            bool pressed = enabled && MouseOver(rect) && GUIUtility.hotControl != 0 && Mouse.current != null && Mouse.current.leftButton.isPressed;
             var face = new Rect(rect.x, rect.y + (pressed ? FramePixel : -FramePixel) * 0.5f, rect.width, rect.height);
             Text(face, label, enabled ? Cream : Muted, medium, TextAnchor.MiddleCenter);
             return clicked && enabled;

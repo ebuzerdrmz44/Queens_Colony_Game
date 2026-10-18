@@ -92,6 +92,15 @@ namespace AntColony
         [Tooltip("Seconds before moving onto another button plays the effect again.")]
         public float buttonHoverParticleCooldown = 0.12f;
 
+        [Serializable]
+        public class MusicPortrait
+        {
+            public Texture2D image;
+            public string caption;
+        }
+        [Header("Music gallery")]
+        public MusicPortrait[] musicPortraits = new MusicPortrait[0];
+
         [Tooltip("UI units per image pixel for the frames (smaller panels shrink it further so the corners fit).")]
         [Range(0.05f, 1f)] public float frameScale = 0.32f;
 
@@ -125,6 +134,16 @@ namespace AntColony
             changed |= Fill(ref iconBuilder, sprites + "Hammer.png");
             changed |= Fill(ref iconEgg, sprites + "Egg.png");
             changed |= Fill(ref iconEggHatching, sprites + "Egg_Half_Opened.png");
+            if (musicPortraits == null || musicPortraits.Length == 0)
+            {
+                string[] roles = { "Worker", "Soldier", "Builder", "Spitter" };
+                musicPortraits = new MusicPortrait[roles.Length];
+                for (int i = 0; i < roles.Length; i++)
+                {
+                    musicPortraits[i] = new MusicPortrait { caption = roles[i] };
+                    changed |= Fill(ref musicPortraits[i].image, sprites + "Ant_" + roles[i] + "_UD.png");
+                }
+            }
             return changed;
         }
 

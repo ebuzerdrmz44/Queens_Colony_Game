@@ -13,19 +13,25 @@ namespace AntColony
         RoomPlaced,
         WallPlaced,
         TowerPlaced,
+        FoodMarked,
+        FoodDelivered,
+        WorkerHatched,
+        TileDug,
+        RoomBuilt,
+        StructureBuilt,
     }
 
     /// <summary>
     /// A guided first game. Each step opens a pop-up that pauses the game and explains one thing; after "Got it"
     /// the game runs and a small goal bar (top middle) says what to do, with the matching button blinking, until the
-    /// player has done it. Then the next pop-up opens. Waves wait until the tutorial is finished or skipped.
-    /// It runs on the first new game (and from "Tutorial" in the main menu); "Skip tutorial" ends it at any step.
+    /// player has done it. The player chooses Next to open the following explanation. Waves wait until finished or skipped.
+    /// It runs only from "Tutorial" in the main menu; "Skip tutorial" ends it at any step.
     /// </summary>
     public class Tutorial : MonoBehaviour
     {
         const string DoneKey = "tutorial.done";
-        /// <summary>A short breath between finishing a goal and the next pop-up.</summary>
-        const float NextStepDelay = 0.8f;
+        // Prevent the click/key that opened an explanation from dismissing it as well.
+        const float ReadDelay = 0.5f;
 
         public class Step
         {
@@ -38,6 +44,9 @@ namespace AntColony
             public Func<bool> IsDone;
             /// <summary>Runs when the player starts on the goal (after "Got it").</summary>
             public Action OnGoalStart;
+            public Action OnEnter;
+            public bool CanSkip = true;
+            public Action OnSkip;
             /// <summary>Show the little cursor that clicks, holds and drags over <see cref="DemoFood"/>.</summary>
             public bool ShowsGatherDemo;
         }
@@ -48,7 +57,33 @@ namespace AntColony
         ColonyGame game;
         List<Step> steps;
         int index = -1;
-        float nextStepTimer = -1f;
+        float popupOpenedAt;
+        bool goalStarted;
+
+        public bool GoalCompleted { get; private set; }
+        public bool CanSkipStep => IsActive && Current != null && Current.CanSkip;
+        public string SkipExplanation => CanSkipStep ? "" : "This step prepares later tasks. Finish it, or skip the whole tutorial.";
+        public string ProgressHint
+        {
+            get
+            {
+                if (GoalCompleted) return "You can keep looking around. Nothing advances until you choose Next.";
+                switch (index)
+                {
+                    case 1: return game.Gather.MarkedCount == 0 ? "Press 6, then select the nearby food. Marked piles have a gold ring." : "Follow a worker: it collects food, enters the nest and stores its load.";
+                    case 2: return "Read the job descriptions in Missions. Close the panel when you are ready.";
+                    case 3: return "Eggs need a free cradle, food and a worker to feed them. M opens job assignments.";
+                    case 4: return "You are already underground. Find the queen, tunnels and rooms, then choose Next.";
+                    case 5: return "Dig next to an existing tunnel. Builders need a connected path to reach the soil.";
+                    case 6: return "Choose empty, dug-out space. A Storage room needs two adjacent tiles.";
+                    case 7: return "Press Tab once. The nest keeps working while you watch the surface.";
+                    case 8: return "Walls need stone and a builder. Keep a gap so workers can get through.";
+                    case 9: return "E selects soldiers. Right-click the ground to move them; watch them respond.";
+                    default: return "Use Read again for help, or Skip tutorial to start the waves.";
+                }
+            }
+        }
+        public bool CanContinue => Time.unscaledTime - popupOpenedAt >= ReadDelay;
         readonly HashSet<TutorialSignal> signals = new HashSet<TutorialSignal>();
 
         public bool IsActive { get; private set; }
@@ -81,7 +116,8 @@ namespace AntColony
             if (ShowingPopup) game.SetTutorialPause(false);
             IsActive = false;
             ShowingPopup = false;
-            nextStepTimer = -1f;
+            GoalCompleted = false;
+            goalStarted = false;
         }
 
         public void Skip()
@@ -94,12 +130,16 @@ namespace AntColony
         /// <summary>Closes the pop-up ("Got it"): the game runs and the player works on the goal.</summary>
         public void Continue()
         {
-            if (!ShowingPopup) return;
+            if (!ShowingPopup || !CanContinue) return;
             ShowingPopup = false;
             game.SetTutorialPause(false);
 
             if (Current != null && Current.IsDone == null) NextStep(); // an explanation only
-            else Current?.OnGoalStart?.Invoke();
+            else if (!goalStarted)
+            {
+                goalStarted = true;
+                Current?.OnGoalStart?.Invoke();
+            }
         }
 
         /// <summary>Finds an unmarked food pile close to the ant hill, or puts one there, and turns the camera to it.</summary>
@@ -124,45 +164,106 @@ namespace AntColony
             if (DemoFood != null) game.CameraRig.FocusSurface(Vector2.Lerp(hill, DemoFood.Position, 0.5f));
         }
 
+        void PrepareBroodView()
+        {
+            Vector2 queen = game.Nest.QueenRoom.StandPoint;
+            Vector2 focus = queen;
+            foreach (Room room in game.Nest.Rooms)
+            {
+                if (room.Type != RoomType.Cradle || !room.IsBuilt || room.IsRemoved) continue;
+                focus = Vector2.Lerp(queen, room.StandPoint, 0.5f);
+                if (room.Brood == null && !room.AwaitingEgg) break;
+            }
+            game.CameraRig.FocusNest(focus);
+            if (game.CameraRig.View != CameraView.Nest) game.CameraRig.ToggleView();
+        }
+
         public void Notify(TutorialSignal signal)
         {
-            if (IsActive) signals.Add(signal);
+            if (IsActive && goalStarted) signals.Add(signal);
         }
 
         bool Saw(TutorialSignal signal) => signals.Contains(signal);
 
         void Update()
         {
-            if (!IsActive || ShowingPopup || game == null || game.InMainMenu || game.State != GameState.Playing) return;
-
-            if (nextStepTimer >= 0f)
-            {
-                nextStepTimer -= Time.unscaledDeltaTime;
-                if (nextStepTimer < 0f) NextStep();
-                return;
-            }
+            if (!IsActive || ShowingPopup || GoalCompleted || game == null || game.InMainMenu || game.IsPaused || game.State != GameState.Playing) return;
 
             Step step = Current;
             if (step?.IsDone != null && step.IsDone())
             {
                 if (game.Audio != null) game.Audio.Play(Sound.UiConfirm);
-                nextStepTimer = NextStepDelay;
+                GoalCompleted = true;
             }
         }
 
         void NextStep()
         {
             index++;
+            GoalCompleted = false;
+            goalStarted = false;
             signals.Clear();
             if (index >= steps.Count)
             {
                 IsActive = false;
+                game.Waves.EnsurePreparationTime(45f);
                 MarkDone();
                 return;
             }
 
+            Current?.OnEnter?.Invoke();
             ShowingPopup = true;
+            popupOpenedAt = Time.unscaledTime;
             game.SetTutorialPause(true);
+        }
+
+        public void Advance()
+        {
+            if (IsActive && !ShowingPopup && GoalCompleted && !game.IsPaused) NextStep();
+        }
+
+        public void SkipStep()
+        {
+            if (!CanSkipStep || game.IsPaused || (ShowingPopup && !CanContinue)) return;
+            Current.OnSkip?.Invoke();
+            // Explanation skips must release the old pause before opening the next explanation.
+            ShowingPopup = false;
+            game.SetTutorialPause(false);
+            NextStep();
+        }
+
+        public void Review()
+        {
+            if (!IsActive) return;
+            ShowingPopup = true;
+            popupOpenedAt = Time.unscaledTime;
+            game.SetTutorialPause(true);
+        }
+
+        public void Write(SaveData data)
+        {
+            data.tutorialActive = IsActive;
+            data.tutorialStep = IsActive ? index : -1;
+            data.tutorialGoalStarted = goalStarted;
+            data.tutorialSignals = 0;
+            foreach (TutorialSignal signal in signals) data.tutorialSignals |= 1 << (int)signal;
+            data.tutorialGoalCompleted = GoalCompleted || (IsActive && goalStarted && Current?.IsDone != null && Current.IsDone());
+        }
+
+        public void Read(SaveData data)
+        {
+            if (!data.tutorialActive || data.tutorialStep < 0 || data.tutorialStep >= steps.Count) return;
+            IsActive = true;
+            index = data.tutorialStep;
+            GoalCompleted = data.tutorialGoalCompleted;
+            // Re-read on loading, preserving actions and completed outcomes from this step.
+            goalStarted = data.tutorialGoalStarted;
+            signals.Clear();
+            foreach (TutorialSignal signal in Enum.GetValues(typeof(TutorialSignal)))
+                if ((data.tutorialSignals & (1 << (int)signal)) != 0) signals.Add(signal);
+            if (index == 1 && goalStarted) PrepareGatherDemo();
+            Current?.OnEnter?.Invoke();
+            Review();
         }
 
         static void MarkDone()
@@ -179,17 +280,18 @@ namespace AntColony
                 {
                     Title = "Welcome to the colony",
                     Body = "Your queen lives in the nest underground. Keep her alive through 10 waves of hungry bugs.\n\n" +
-                           "This tutorial pauses the game while you read. The waves wait until it's done.",
+                           "This tutorial pauses while you read. Try each task, watch what happens, then choose Next when you are ready. Waves wait until you finish. You can re-read or skip at any time.",
                 },
                 new Step
                 {
                     Title = "Gather food",
+                    CanSkip = false,
                     Body = "Everything runs on food: ants eat, and new ants cost food.\n\n" +
                            "Pick which food piles your workers gather: press 6 (Gather), then click a pile, or hold the mouse button " +
                            "and drag a box over several. There's food right next to the ant hill: watch the little cursor.",
-                    Goal = "Press 6, then click or drag over the food",
+                    Goal = "Mark food with 6, then watch a worker bring it home",
                     HighlightKey = "6",
-                    IsDone = () => game.Gather.MarkedCount > 0,
+                    IsDone = () => Saw(TutorialSignal.FoodMarked) && Saw(TutorialSignal.FoodDelivered),
                     OnGoalStart = PrepareGatherDemo,
                     ShowsGatherDemo = true,
                 },
@@ -205,41 +307,44 @@ namespace AntColony
                 new Step
                 {
                     Title = "Raise ants",
+                    OnEnter = PrepareBroodView,
                     Body = "Press 1 for a worker, 2 for a soldier, 3 for a builder. It costs food.\n\n" +
-                           "The queen walks to a free cradle and lays an egg. Workers feed the larva until a new ant hatches.",
-                    Goal = "Press 1 to raise a worker",
+                           "We have moved underground so you can watch: the queen walks to a free cradle and lays an egg. Workers feed the larva until a new ant hatches. You can use Skip step if you do not want to wait.",
+                    Goal = "Press 1, then wait for your new worker to hatch",
                     HighlightKey = "1",
-                    IsDone = () => Saw(TutorialSignal.AntQueued),
+                    IsDone = () => Saw(TutorialSignal.AntQueued) && Saw(TutorialSignal.WorkerHatched),
                 },
                 new Step
                 {
-                    Title = "The nest",
-                    Body = "The colony has two views: the meadow above and the nest below. Tab switches between them.",
-                    Goal = "Press Tab to look underground",
-                    HighlightKey = "Tab",
+                    Title = "Explore the nest",
+                    OnSkip = () => { if (game.CameraRig.View != CameraView.Nest) game.CameraRig.ToggleView(); },
+                    Body = "You are already underground after watching the brood. Take a moment to find the queen, tunnels and rooms. Tab switches between the meadow above and the nest below; return underground before continuing.",
+                    Goal = "Explore the underground nest, then choose Next",
                     IsDone = () => game.CameraRig.View == CameraView.Nest,
                 },
                 new Step
                 {
                     Title = "Dig",
+                    CanSkip = false,
                     Body = "Press 4 and drag a box over brown soil next to a tunnel. Builders dig it out.\n\n" +
                            "Digging finds stone (grey, pebbly soil gives the most), sometimes seeds or grubs. Stone builds walls and towers.",
-                    Goal = "Press 4 and drag over brown soil",
+                    Goal = "Mark soil with 4 and watch a builder finish digging",
                     HighlightKey = "4",
-                    IsDone = () => Saw(TutorialSignal.DigMarked),
+                    IsDone = () => Saw(TutorialSignal.DigMarked) && Saw(TutorialSignal.TileDug),
                 },
                 new Step
                 {
                     Title = "Rooms",
                     Body = "Rooms go on dug-out tunnel:\n" +
                            "5 Storage holds food and leaves.\n6 Cradle holds one egg.\n7 Fungus Garden turns leaves into food.",
-                    Goal = "Place a room (5, 6 or 7) on dug tunnel",
+                    Goal = "Place a room (5, 6 or 7) and wait for construction",
                     HighlightKey = "5",
-                    IsDone = () => Saw(TutorialSignal.RoomPlaced),
+                    IsDone = () => Saw(TutorialSignal.RoomPlaced) && Saw(TutorialSignal.RoomBuilt),
                 },
                 new Step
                 {
                     Title = "Back to the meadow",
+                    OnSkip = () => { if (game.CameraRig.View != CameraView.Surface) game.CameraRig.ToggleView(); },
                     Body = "Enemies come from the edges of the meadow and attack the ant hill. Let's get ready.",
                     Goal = "Press Tab to go back up",
                     HighlightKey = "Tab",
@@ -250,9 +355,9 @@ namespace AntColony
                     Title = "Defences",
                     Body = "Press 4 and drag to build a line of walls (stone). Press 5 to place an acid tower (a little food and stone): " +
                            "it shoots enemies in range.\n\nAnts can't walk through walls either: leave a way out for your workers!",
-                    Goal = "Build a wall (4) or a tower (5)",
+                    Goal = "Place a wall (4) or tower (5), then let a builder finish",
                     HighlightKey = "4",
-                    IsDone = () => Saw(TutorialSignal.WallPlaced) || Saw(TutorialSignal.TowerPlaced),
+                    IsDone = () => (Saw(TutorialSignal.WallPlaced) || Saw(TutorialSignal.TowerPlaced)) && Saw(TutorialSignal.StructureBuilt),
                 },
                 new Step
                 {
@@ -262,13 +367,14 @@ namespace AntColony
                            "E selects all soldiers, Q halves the group.",
                     Goal = "Raise a soldier (2 or Z) or select your soldiers",
                     HighlightKey = "2",
+                    OnGoalStart = () => game.Selection.Clear(),
                     IsDone = () => Saw(TutorialSignal.SoldierQueued) || game.Selection.Selected.Count > 0,
                 },
                 new Step
                 {
                     Title = "You're ready",
                     Body = "The advisor (top right) warns you about problems. R opens the colony report, H the controls, " +
-                           "Esc pauses.\n\nThe first wave starts its countdown now. Good luck!",
+                           "Esc pauses.\n\nYou have at least 45 seconds to prepare before the first wave. Good luck!",
                 },
             };
         }

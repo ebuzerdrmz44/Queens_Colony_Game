@@ -380,6 +380,7 @@ namespace AntColony
             claimedDigs.Remove(tile);
             SetTile(tile, NestTile.Tunnel);
             TilesDug++;
+            game.Tutorial.Notify(TutorialSignal.TileDug);
             game.PlayEffect(EffectKind.TileDug, TileCenter(tile));
             return true;
         }

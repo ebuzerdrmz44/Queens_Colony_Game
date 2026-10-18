@@ -153,6 +153,7 @@ namespace AntColony
             if (buildProgress < 1f) return;
 
             IsBuilt = true;
+            game.Tutorial.Notify(TutorialSignal.RoomBuilt);
             if (visual != null) visual.color = Color.white;
             Object.Destroy(buildBar.gameObject);
             game.PlayEffect(EffectKind.RoomBuilt, StandPoint);

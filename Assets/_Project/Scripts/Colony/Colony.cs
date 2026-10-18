@@ -153,7 +153,11 @@ namespace AntColony
         {
             int accepted = Mathf.Min(amount, FreeSpace);
             food += accepted;
-            if (foraged) Stats.ForagedFood.Add(accepted);
+            if (foraged)
+            {
+                Stats.ForagedFood.Add(accepted);
+                if (accepted > 0) game.Tutorial.Notify(TutorialSignal.FoodDelivered);
+            }
             Stats.Wasted.Add(amount - accepted);
             return accepted;
         }
@@ -186,6 +190,7 @@ namespace AntColony
             int accepted = Mathf.Min(amount, FreeSpace);
             Leaves += accepted;
             Stats.ForagedLeaves.Add(accepted);
+            if (accepted > 0) game.Tutorial.Notify(TutorialSignal.FoodDelivered);
             Stats.Wasted.Add(amount - accepted);
             return accepted;
         }
@@ -473,6 +478,7 @@ namespace AntColony
                 if (!brood.IsReadyToHatch) continue;
 
                 SpawnAnt(brood.Caste, room.StandPoint);
+                if (brood.Caste == AntRole.Worker) game.Tutorial.Notify(TutorialSignal.WorkerHatched);
                 game.PlayEffect(EffectKind.AntHatched, room.StandPoint);
                 brood.Destroy();
                 room.Brood = null;

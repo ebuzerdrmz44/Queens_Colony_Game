@@ -162,7 +162,11 @@ namespace AntColony
 
             food.IsMarked = isMarked;
             ShowRing(food, isMarked);
-            if (isMarked) marked.Add(food);
+            if (isMarked)
+            {
+                marked.Add(food);
+                game.Tutorial.Notify(TutorialSignal.FoodMarked);
+            }
             else marked.Remove(food);
         }
 

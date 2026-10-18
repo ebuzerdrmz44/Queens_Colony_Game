@@ -91,6 +91,12 @@ namespace AntColony
             surfaceFocus = point;
         }
 
+        /// <summary>Glides the underground view toward the queen or brood chambers.</summary>
+        public void FocusNest(Vector2 point)
+        {
+            nestFocus = point;
+        }
+
         /// <summary>Scrolls the current view in any direction (faster when zoomed out).</summary>
         public void Pan(Vector2 direction)
         {

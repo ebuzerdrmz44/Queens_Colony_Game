@@ -86,6 +86,7 @@ namespace AntColony
         void Complete()
         {
             IsBuilt = true;
+            game.Tutorial.Notify(TutorialSignal.StructureBuilt);
             visual.color = builtColor;
             Destroy(buildBar.gameObject);
             game.PlayEffect(EffectKind.StructureBuilt, Position);

@@ -582,6 +582,15 @@ MonoBehaviour:
     buttonHoverParticles: {fileID: 3812709656321731882, guid: ba699473954a46bf08e1675327e11233, type: 3}
     buttonHoverParticleScale: 36
     buttonHoverParticleCooldown: 0.12
+    musicPortraits:
+    - image: {fileID: 2800000, guid: 5db305ab22e36952e83ac0382f7398c6, type: 3}
+      caption: Worker
+    - image: {fileID: 2800000, guid: b1e1dab04a11335ac91aad059d3eb36f, type: 3}
+      caption: Soldier
+    - image: {fileID: 2800000, guid: 4a108b1a4fe97c296a8895931d7897a6, type: 3}
+      caption: Builder
+    - image: {fileID: 2800000, guid: 3c6650596fbf688abbd71dd23f67dd40, type: 3}
+      caption: Spitter
     frameScale: 0.32
   sound:
     masterVolume: 1

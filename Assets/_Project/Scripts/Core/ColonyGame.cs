@@ -144,13 +144,32 @@ namespace AntColony
             OpenMainMenu();
         }
 
+        const string AutoSaveKey = "colony.autosave.afterWave";
+        int lastCompletedWave;
+        public bool AutoSaveAfterWave => PlayerPrefs.GetInt(AutoSaveKey, 1) != 0;
+
+        public void SetAutoSaveAfterWave(bool enabled)
+        {
+            PlayerPrefs.SetInt(AutoSaveKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
         void Update()
         {
             if (messageTimeLeft > 0f) messageTimeLeft -= Time.unscaledDeltaTime;
-            if (State != GameState.Playing || InMainMenu) return;
+            if (State != GameState.Playing || InMainMenu || IsPaused || Hud.HasConfirmation) return;
 
             if (Colony.IsQueenDead) EndGame(GameState.Lost);
-            else if (Waves.AllWavesDefeated) EndGame(GameState.Won);
+            else
+            {
+                // A wave is cleared only after all queued spawns (including the boss) and enemies are gone.
+                if (Waves.CurrentWave > lastCompletedWave && !Waves.IsWaveActive)
+                {
+                    lastCompletedWave = Waves.CurrentWave;
+                    if (AutoSaveAfterWave && SaveGame()) ShowMessage($"Wave {lastCompletedWave} cleared. Autosaved.");
+                }
+                if (Waves.AllWavesDefeated) EndGame(GameState.Won);
+            }
         }
 
         void OnDestroy()
@@ -289,12 +308,14 @@ namespace AntColony
             Tutorial.Stop();
         }
 
-        /// <summary>A fresh game. The tutorial runs on the very first one, or whenever <paramref name="withTutorial"/> asks for it.</summary>
+        /// <summary>A fresh game. The tutorial runs only when <paramref name="withTutorial"/> asks for it.</summary>
         public void StartNewGame(bool withTutorial = false)
         {
             Restart();
             InMainMenu = false;
-            if (withTutorial || Tutorial.IsFirstTime) Tutorial.Begin();
+            if (withTutorial) Tutorial.Begin();
+            // The confirmed new game replaces the single save slot with a recoverable starting point.
+            if (!SaveGame()) ShowMessage("New game started, but saving failed. The previous save was kept.");
         }
 
         /// <summary>Writes the running game to the save file (one slot). False if it couldn't.</summary>
@@ -308,6 +329,7 @@ namespace AntColony
             Defenses.Write(data);
             Food.Write(data);
             Waves.Write(data);
+            Tutorial.Write(data);
             try
             {
                 data.WriteToDisk();
@@ -351,9 +373,11 @@ namespace AntColony
             Defenses.Read(data);
             Food.Read(data);
             Waves.Read(data);
+            lastCompletedWave = Waves.IsWaveActive ? Mathf.Max(0, Waves.CurrentWave - 1) : Waves.CurrentWave;
             if (data.onSurface != (CameraRig.View == CameraView.Surface)) CameraRig.ToggleView();
 
             InMainMenu = false;
+            Tutorial.Read(data);
             ShowMessage($"Loaded the game saved {data.savedAt}.");
             return true;
         }
@@ -417,6 +441,8 @@ namespace AntColony
 
         void BuildWorld()
         {
+            lastCompletedWave = 0;
+            Hud.ClosePanels();
             logicRoot = new GameObject("Colony Logic").transform;
             SurfaceRoot = CreateSceneRoot("Surface World", surfaceScene);
             NestRoot = CreateSceneRoot("Nest World", nestScene);

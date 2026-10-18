@@ -29,6 +29,11 @@ namespace AntColony
 
             Keyboard keyboard = Keyboard.current;
             Mouse mouse = Mouse.current;
+            if (game.Hud.HasConfirmation)
+            {
+                if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) game.Hud.CancelConfirmation();
+                return;
+            }
 
 #if UNITY_EDITOR
             if (keyboard != null && keyboard.f8Key.wasPressedThisFrame)
@@ -53,12 +58,14 @@ namespace AntColony
 
             if (game.State != GameState.Playing)
             {
-                if (keyboard != null && keyboard.rKey.wasPressedThisFrame) game.Restart();
+                if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) game.Hud.ClosePanels();
+                else if (keyboard != null && keyboard.rKey.wasPressedThisFrame) game.Hud.RequestNewGame();
                 return;
             }
 
-            if (game.Tutorial.ShowingPopup)
+            if (game.Tutorial.ShowingPopup && !game.IsPaused)
             {
+                if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) { game.TogglePause(); return; }
                 // The pop-up's buttons do the rest; Enter / Space mean "Got it".
                 if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame)) game.Tutorial.Continue();
                 return;
