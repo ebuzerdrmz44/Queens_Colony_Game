@@ -76,6 +76,15 @@ namespace AntColony
 
         public bool IsMissionsOpen => showMissions;
 
+        /// <summary>The nest room whose details card is open (clicked in the nest view), or null.</summary>
+        Room selectedRoom;
+
+        public void SelectRoom(Room room)
+        {
+            if (room != null && game.Audio != null) game.Audio.Play(Sound.UiClick);
+            selectedRoom = room;
+        }
+
         // Leaves (or another particle prefab) falling from a button's sides when the mouse moves onto it.
         UiParticles hoverParticles;
         /// <summary>The button under the mouse in the last repaint (zero size if none).</summary>
@@ -202,8 +211,9 @@ namespace AntColony
         /// <summary>Closes the report, missions, help or sound panel. False if none was open.</summary>
         public bool ClosePanels()
         {
-            bool anyOpen = showReport || showHelp || showMissions || showSound || showTrackList;
+            bool anyOpen = showReport || showHelp || showMissions || showSound || showTrackList || selectedRoom != null;
             showReport = showHelp = showMissions = showSound = showTrackList = false;
+            selectedRoom = null;
             return anyOpen;
         }
 
@@ -285,6 +295,7 @@ namespace AntColony
             }
 
             DrawRoomLabels(scale);
+            DrawRoomInfo(scale);
             if (Event.current.type == EventType.Repaint) DrawFloaters();
             DrawSelectionBox(scale);
             DrawSceneFade(screenWidth);
@@ -1788,6 +1799,140 @@ namespace AntColony
                 {
                     Text(new Rect(anchor.x - 40f, anchor.y - 7f * large, 80f, 7f * large), "!", Bad, large, TextAnchor.UpperCenter);
                 }
+            }
+        }
+
+        /// <summary>
+        /// The details card of the clicked room: what it does and how it's doing right now (stored food for storage,
+        /// the next harvest for a garden, the young one in a cradle, the queen in her chamber). The room gets a gold
+        /// frame. Click elsewhere, the X or Esc to close it.
+        /// </summary>
+        void DrawRoomInfo(float scale)
+        {
+            Room room = selectedRoom;
+            if (room == null) return;
+            if (room.IsRemoved || game.CameraRig.View != CameraView.Nest || game.CameraRig.Fade > 0.5f)
+            {
+                if (room.IsRemoved) selectedRoom = null;
+                return;
+            }
+
+            Camera viewCamera = game.CameraRig.Camera;
+            Rect world = room.WorldRect;
+            Vector3 low = viewCamera.WorldToScreenPoint(world.min);
+            Vector3 high = viewCamera.WorldToScreenPoint(world.max);
+            var frame = Rect.MinMaxRect(low.x / scale, (Screen.height - high.y) / scale, high.x / scale, (Screen.height - low.y) / scale);
+            if (Event.current.type == EventType.Repaint) Outline(Snap(frame), Gold, 2f);
+
+            var lines = new List<(string text, Color color)>();
+            float? barFraction = null;
+            Color barColor = Gold;
+            string barLabel = "";
+            GameSettings settings = game.Settings;
+            Colony colony = game.Colony;
+
+            if (!room.IsBuilt)
+            {
+                lines.Add(("Being built", Gold));
+                lines.Add((colony.CountAnts(AntRole.Builder) > 0 ? "Builders are on it." : "Needs a builder (3).", Muted));
+                barFraction = room.BuildProgress;
+                barLabel = $"{Mathf.RoundToInt(room.BuildProgress * 100f)}%";
+            }
+            else
+            {
+                switch (room.Type)
+                {
+                    case RoomType.Storage:
+                    {
+                        int capacity = Mathf.Max(1, colony.StorageCapacity);
+                        int stored = colony.Food + colony.Leaves;
+                        lines.Add(($"Holds {settings.storageRoomCapacity} more food or leaves", Cream));
+                        lines.Add(($"Colony stores: {colony.Food} food, {colony.Leaves} leaves", Cream));
+                        lines.Add((colony.FreeSpace > 0 ? $"{colony.FreeSpace} free space" : "Full! Build another storage.", colony.FreeSpace > 0 ? Good : Bad));
+                        barFraction = stored / (float)capacity;
+                        barLabel = $"{stored}/{capacity}";
+                        break;
+                    }
+                    case RoomType.Garden:
+                    {
+                        string state = room.IsWorking ? "Growing fungus" : colony.Leaves <= 0 ? "Idle: no leaves" : "Idle: storage full";
+                        lines.Add((state, room.IsWorking ? Good : Bad));
+                        lines.Add(($"1 leaf -> {settings.gardenFoodPerLeaf} food every {settings.gardenCycleTime:0.#}s", Cream));
+                        lines.Add(($"Leaves waiting: {colony.Leaves}", colony.Leaves > 0 ? Cream : Muted));
+                        barFraction = room.IsWorking ? room.GardenTimer / Mathf.Max(0.01f, settings.gardenCycleTime) : 0f;
+                        barColor = Good;
+                        barLabel = "next food";
+                        break;
+                    }
+                    case RoomType.Cradle:
+                    {
+                        Brood brood = room.Brood;
+                        if (brood == null)
+                        {
+                            lines.Add((room.AwaitingEgg ? "The queen is coming to lay an egg." : "Empty: ready for an egg.", Muted));
+                            lines.Add(("Raise ants with 1 2 3 or Z.", Muted));
+                        }
+                        else
+                        {
+                            string what = brood.Stage == BroodStage.Egg ? "egg" : "larva";
+                            lines.Add(($"{brood.Caste} {what}", Gold));
+                            if (brood.Stage == BroodStage.Larva)
+                                lines.Add(($"Fed {brood.FoodFed}/{brood.FoodNeeded}", brood.IsWaitingForFood ? Bad : Cream));
+                            lines.Add((brood.IsWaitingForFood ? "Hungry! Needs a larva feeder." : brood.HasNurse ? "Being fed." : "Growing.", brood.IsWaitingForFood ? Bad : Good));
+                            barFraction = brood.Progress;
+                            barColor = Brood.CasteColor(brood.Caste);
+                            barLabel = "grown";
+                        }
+                        break;
+                    }
+                    case RoomType.Queen:
+                    {
+                        lines.Add(($"Health {Mathf.CeilToInt(colony.QueenHealth)}/{Mathf.CeilToInt(colony.QueenMaxHealth)}", Cream));
+                        lines.Add(($"Eggs queued: {colony.RaiseQueue.Count}", Cream));
+                        lines.Add(($"Holds {settings.baseStorage} food or leaves", Muted));
+                        barFraction = colony.QueenHealth / Mathf.Max(1f, colony.QueenMaxHealth);
+                        barLabel = "health";
+                        break;
+                    }
+                    default:
+                        lines.Add((room.Info.Description, Cream));
+                        break;
+                }
+            }
+
+            // The card sits above the room (or below it near the top of the screen), kept on screen.
+            const float width = 250f;
+            float textWidth = width - 20f;
+            float height = 10f + 22f;
+            foreach (var line in lines) height += font.MeasureHeight(line.text, small, textWidth) + 3f;
+            if (barFraction.HasValue) height += 18f;
+            height += 8f;
+            float screenWidth = Screen.width / scale;
+            float x = Mathf.Clamp(frame.center.x - width * 0.5f, Margin, screenWidth - width - Margin);
+            float y = frame.y - height - 8f;
+            if (y < Margin + 60f) y = frame.yMax + 8f;
+            y = Mathf.Clamp(y, Margin, screenHeight - height - 110f);
+            var card = Snap(new Rect(x, y, width, height));
+            WoodBox(card);
+            uiRects.Add(card);
+
+            float left = card.x + 10f;
+            float cursor = card.y + 8f;
+            Text(new Rect(left, cursor, textWidth - 28f, 20f), room.Info.Name, Gold, medium, TextAnchor.MiddleLeft);
+            if (SmallButton(new Rect(card.xMax - 30f, card.y + 6f, 22f, 22f), "X", true)) selectedRoom = null;
+            cursor += 24f;
+            foreach (var line in lines)
+                cursor += Text(new Rect(left, cursor, textWidth, 200f), line.text, line.color, small) + 3f;
+            if (barFraction.HasValue)
+            {
+                float labelWidth = font.Measure(barLabel, small) + 8f;
+                GoldBar(new Rect(left, cursor + 4f, textWidth - labelWidth, 10f), Mathf.Clamp01(barFraction.Value), null);
+                if (barColor != Gold)
+                {
+                    float filled = (textWidth - labelWidth - 2f) * Mathf.Clamp01(barFraction.Value);
+                    if (filled > 0f) FillRect(new Rect(left + 1f, cursor + 5f, filled, 8f), barColor);
+                }
+                Text(new Rect(left, cursor, textWidth, 18f), barLabel, Muted, small, TextAnchor.MiddleRight);
             }
         }
 

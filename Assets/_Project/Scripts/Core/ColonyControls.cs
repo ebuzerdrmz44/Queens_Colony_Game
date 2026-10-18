@@ -132,6 +132,12 @@ namespace AntColony
             {
                 game.Selection.CancelDrag();
                 if (game.NestTools.IsActive) game.NestTools.HandleMouse(mouse);
+                else if (mouse.leftButton.wasPressedThisFrame && !game.Hud.IsPointerOverUi(mouse.position.ReadValue()))
+                {
+                    // Click a room for its details; click bare soil or tunnel to close them.
+                    Vector2 world = game.CameraRig.ScreenToWorld(mouse.position.ReadValue());
+                    game.Hud.SelectRoom(game.Nest.RoomAt(game.Nest.WorldToTile(world)));
+                }
                 return;
             }
 

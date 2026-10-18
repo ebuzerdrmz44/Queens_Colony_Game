@@ -112,6 +112,17 @@ namespace AntColony
             }
         }
 
+        /// <summary>The room's footprint in the world (for highlighting it).</summary>
+        public Rect WorldRect
+        {
+            get
+            {
+                Vector2 bottomCenter = root.position;
+                float width = Size.x * Nest.TileSize;
+                return new Rect(bottomCenter.x - width * 0.5f, bottomCenter.y, width, Size.y * Nest.TileSize);
+            }
+        }
+
         /// <summary>The middle of the footprint's floor, where ants stand to use the room.</summary>
         public Vector2 StandPoint => game.Nest.StandPoint(Origin + new Vector2Int(Size.x / 2, 0));
         public Vector2Int StandTile => Origin + new Vector2Int(Size.x / 2, 0);
