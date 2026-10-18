@@ -382,7 +382,7 @@ MonoBehaviour:
     spitterCooldown: 1.4
     boss:
       name: Red Ant Warlord
-      prefab: {fileID: 0}
+      prefab: {fileID: 2117236814300365928, guid: ca48257331e941b4ba4451d5c6a5c712, type: 3}
       kind: 2
       firstWave: 999
       speed: 0.55

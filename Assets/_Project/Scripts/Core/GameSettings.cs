@@ -202,6 +202,8 @@ namespace AntColony
         [Range(0f, 1f)] public float foodBigPileChance = 0.3f;
         [Tooltip("Chance that a new pile is huge (three times the food).")]
         [Range(0f, 1f)] public float foodHugePileChance = 0.1f;
+        [Tooltip("How much bigger a big pile looks per extra share of food (0.12: big piles 12% bigger, huge 24%). 0 = all the same size.")]
+        [Range(0f, 0.5f)] public float foodBigPileGrowth = 0.12f;
 
         [Header("Enemy waves")]
         public float firstWaveDelay = 310f;

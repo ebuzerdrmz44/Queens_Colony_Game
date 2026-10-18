@@ -318,9 +318,12 @@ namespace AntColony
             if (upsideDown) visual.color = new Color(0.75f, 0.65f, 0.6f);
             if (created) GameArt.ScaleToWidth(visual, width);
             else food.PickRandomLook(visual);
-            // Big and huge piles (more trips than their kind's usual) are drawn bigger.
+            // Big and huge piles (more trips than their kind's usual) are drawn a little bigger.
             if (!upsideDown && TryFindType(objectName, out FoodType usual) && trips > usual.Trips)
-                visual.transform.localScale *= Mathf.Min(1.8f, Mathf.Sqrt(trips / (float)usual.Trips));
+            {
+                float extraShares = trips / (float)usual.Trips - 1f;
+                visual.transform.localScale *= 1f + Mathf.Min(2f, extraShares) * game.Settings.foodBigPileGrowth;
+            }
 
             food.Init(this, visual, trips, kind, load);
             sources.Add(food);
