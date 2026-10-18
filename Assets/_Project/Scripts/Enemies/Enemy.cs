@@ -38,6 +38,7 @@ namespace AntColony
         float scrambleTimeLeft;
         BossSkills skills;
 
+        public int WaveNumber { get; set; }
         public bool IsBoss => stats != null && stats.kind == EnemyKind.Boss;
 
         public Health Health { get; private set; }
@@ -175,7 +176,7 @@ namespace AntColony
             if (attackCooldownLeft > 0f) return;
 
             animator.PlayAttack();
-            targetHealth.TakeDamage(stats.damage);
+            targetHealth.TakeDamage(stats.damage, WaveNumber);
             game.PlayEffect(EffectKind.EnemyBite, targetPosition);
             attackCooldownLeft = stats.attackCooldown;
         }

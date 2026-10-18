@@ -405,6 +405,7 @@ namespace AntColony
 
         void HandleDeath()
         {
+            Game.Waves.RecordAntLoss(Role, Health.LastDamageWave, Health.LastDamageWasStarvation);
             Game.PlayEffect(EffectKind.AntDied, Position);
             OnDeath();
             Game.Colony.RemoveAnt(this);

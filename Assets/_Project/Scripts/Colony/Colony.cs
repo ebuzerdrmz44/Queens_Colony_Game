@@ -390,7 +390,7 @@ namespace AntColony
             starvationTick = 0f;
 
             float damage = game.Settings.starvationDamagePerSecond;
-            for (int i = ants.Count - 1; i >= 0; i--) ants[i].Health.TakeDamage(damage);
+            for (int i = ants.Count - 1; i >= 0; i--) ants[i].Health.TakeDamage(damage, starvation: true);
             DamageQueen(damage * 0.5f);
         }
 

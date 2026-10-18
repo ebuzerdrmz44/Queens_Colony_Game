@@ -9,6 +9,8 @@ namespace AntColony
         const float FlashDuration = 0.12f;
         static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f);
 
+        public int LastDamageWave { get; private set; }
+        public bool LastDamageWasStarvation { get; private set; }
         public float Max { get; private set; }
         public float Current { get; private set; }
         public bool IsDead => Current <= 0f;
@@ -34,10 +36,12 @@ namespace AntColony
         /// <summary>Raised on every hit (for the floating damage numbers).</summary>
         public static event System.Action<Health, float> Damaged;
 
-        public void TakeDamage(float amount)
+        public void TakeDamage(float amount, int sourceWave = 0, bool starvation = false)
         {
             if (IsDead || amount <= 0f) return;
 
+            LastDamageWave = sourceWave;
+            LastDamageWasStarvation = starvation;
             Current = Mathf.Max(0f, Current - amount);
             Damaged?.Invoke(this, amount);
             bar.SetFraction(Fraction);

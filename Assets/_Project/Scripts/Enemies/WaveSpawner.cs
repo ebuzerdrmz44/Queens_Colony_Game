@@ -15,6 +15,43 @@ namespace AntColony
         const float BossDelay = 5f;
 
         readonly List<Enemy> enemies = new List<Enemy>();
+        readonly List<WaveReportRecord> reports = new List<WaveReportRecord>();
+        readonly Dictionary<int, int> pendingByWave = new Dictionary<int, int>();
+        public IReadOnlyList<WaveReportRecord> Reports => reports;
+        public bool HistoryPartial { get; private set; }
+        int historyUnknownThrough;
+
+        public WaveReportRecord FindReport(int wave) => reports.Find(report => report.wave == wave);
+
+        WaveReportRecord Report(int wave)
+        {
+            WaveReportRecord report = FindReport(wave);
+            if (report != null) return report;
+            report = new WaveReportRecord { wave = wave, partial = HistoryPartial && (wave == 0 || wave <= historyUnknownThrough) };
+            reports.Add(report);
+            return report;
+        }
+
+        void AddPending(int wave, int count)
+        {
+            pendingByWave.TryGetValue(wave, out int before);
+            pendingByWave[wave] = Mathf.Max(0, before + count);
+        }
+
+        public int RemainingInWave(int wave)
+        {
+            pendingByWave.TryGetValue(wave, out int remaining);
+            foreach (Enemy enemy in enemies) if (enemy != null && enemy.WaveNumber == wave) remaining++;
+            return remaining;
+        }
+
+        public void RecordAntLoss(AntRole role, int sourceWave, bool starvation)
+        {
+            // Starvation and unattributed losses are upkeep, never invented enemy kills.
+            int wave = starvation ? 0 : Mathf.Clamp(sourceWave, 0, TotalWaves);
+            Report(wave).RecordLoss((int)role, starvation);
+        }
+
         ColonyGame game;
         float timeUntilNextWave;
         int enemiesWaitingToSpawn;
@@ -34,6 +71,8 @@ namespace AntColony
         {
             // An enemy destroyed without going through RemoveEnemy must not hold up the end of a wave.
             enemies.RemoveAll(enemy => enemy == null);
+            foreach (WaveReportRecord report in reports)
+                if (report.started && !report.completed && RemainingInWave(report.wave) == 0) report.completed = true;
         }
         public bool AllWavesDefeated => !HasMoreWaves && enemiesWaitingToSpawn == 0 && enemies.Count == 0;
 
@@ -57,7 +96,7 @@ namespace AntColony
 
         void Update()
         {
-            if (!HasMoreWaves) return;
+            if (game.InMainMenu || game.IsPaused || game.State != GameState.Playing || !HasMoreWaves) return;
             if (game.Tutorial != null && game.Tutorial.HoldsWaves) return; // the first wave waits for the tutorial
 
             timeUntilNextWave -= Time.deltaTime;
@@ -65,6 +104,11 @@ namespace AntColony
         }
 
         /// <summary>For tests: pretend <paramref name="wave"/> waves are done, with the next one due in <paramref name="seconds"/>.</summary>
+        public void EnsurePreparationTime(float seconds)
+        {
+            if (CurrentWave == 0) timeUntilNextWave = Mathf.Max(timeUntilNextWave, seconds);
+        }
+
         public void SkipTo(int wave, float seconds)
         {
             CurrentWave = Mathf.Clamp(wave, 0, TotalWaves - 1);
@@ -74,9 +118,10 @@ namespace AntColony
         /// <summary>Starts the next wave right away (also used by the "Call next wave" button).</summary>
         public void StartNextWave()
         {
-            if (!HasMoreWaves) return;
+            if (!HasMoreWaves || (game.Tutorial != null && game.Tutorial.HoldsWaves)) return;
 
             CurrentWave++;
+            Report(CurrentWave).started = true;
             timeUntilNextWave = game.Settings.timeBetweenWaves;
 
             int count = game.Settings.enemiesInFirstWave + (CurrentWave - 1) * game.Settings.extraEnemiesPerWave;
@@ -89,25 +134,28 @@ namespace AntColony
 
         public void RemoveEnemy(Enemy enemy)
         {
-            enemies.Remove(enemy);
+            if (enemies.Remove(enemy)) Report(enemy.WaveNumber).kills++;
             if (enemy == Boss) Boss = null;
         }
 
         /// <summary>The final wave's boss walks in from the edge a few seconds after the wave starts.</summary>
         IEnumerator BossArrives()
         {
+            int wave = CurrentWave;
+            AddPending(wave, 1);
             enemiesWaitingToSpawn++; // the game isn't won while the boss is still on its way
             bossOnTheWay = true;
             yield return new WaitForSeconds(BossDelay);
             bossOnTheWay = false;
             enemiesWaitingToSpawn--;
-            SpawnBoss(game.Surface.RandomEdgePoint(), 1f);
+            AddPending(wave, -1);
+            SpawnBoss(game.Surface.RandomEdgePoint(), 1f, wave);
         }
 
-        Enemy SpawnBoss(Vector2 point, float healthMultiplier)
+        Enemy SpawnBoss(Vector2 point, float healthMultiplier, int waveNumber = 0, bool recordSpawn = true)
         {
             EnemyStats stats = game.Settings.boss;
-            Boss = SpawnEnemyAt(stats, healthMultiplier, point);
+            Boss = SpawnEnemyAt(stats, healthMultiplier, point, waveNumber, recordSpawn);
             game.PlayEffect(EffectKind.BossArrived, point);
             game.ShowMessage($"The {stats.name} is coming! Defend the queen!");
             return Boss;
@@ -161,13 +209,15 @@ namespace AntColony
         IEnumerator SpawnWave(int wave, int count)
         {
             enemiesWaitingToSpawn += count;
+            AddPending(wave, count);
             float healthMultiplier = 1f + (wave - 1) * game.Settings.enemyHealthGrowthPerWave;
 
             for (int i = 0; i < count; i++)
             {
                 EnemyStats stats = PickEnemyType(wave);
-                if (stats != null) SpawnEnemy(stats, healthMultiplier);
+                if (stats != null) SpawnEnemy(stats, healthMultiplier, wave);
                 enemiesWaitingToSpawn--;
+                AddPending(wave, -1);
 
                 yield return new WaitForSeconds(DelayBetweenSpawns);
             }
@@ -188,12 +238,12 @@ namespace AntColony
             return allowed[Random.Range(0, allowed.Count)];
         }
 
-        void SpawnEnemy(EnemyStats stats, float healthMultiplier)
+        void SpawnEnemy(EnemyStats stats, float healthMultiplier, int wave)
         {
-            SpawnEnemyAt(stats, healthMultiplier, game.Surface.RandomEdgePoint());
+            SpawnEnemyAt(stats, healthMultiplier, game.Surface.RandomEdgePoint(), wave);
         }
 
-        Enemy SpawnEnemyAt(EnemyStats stats, float healthMultiplier, Vector2 spawnPoint)
+        Enemy SpawnEnemyAt(EnemyStats stats, float healthMultiplier, Vector2 spawnPoint, int waveNumber = 0, bool recordSpawn = true)
         {
             Enemy enemy;
             if (stats.prefab != null)
@@ -208,7 +258,15 @@ namespace AntColony
                 enemy = enemyObject.AddComponent<Enemy>();
             }
             enemy.Init(game, stats, healthMultiplier, spawnPoint);
+            enemy.WaveNumber = waveNumber > 0 ? waveNumber : CurrentWave;
             enemies.Add(enemy);
+            if (recordSpawn)
+            {
+                WaveReportRecord report = Report(enemy.WaveNumber);
+                report.started = true;
+                report.completed = false;
+                report.spawned++;
+            }
             return enemy;
         }
 
@@ -216,6 +274,17 @@ namespace AntColony
 
         public void Write(SaveData data)
         {
+            // Include a clear that happened earlier this frame, before Unity calls LateUpdate.
+            LateUpdate();
+            data.waveHistoryUnknownThrough = historyUnknownThrough;
+            data.hasWaveReports = true;
+            data.partialWaveHistory = HistoryPartial;
+            data.waveReports = new List<WaveReportRecord>(reports);
+            foreach (var pending in pendingByWave)
+            {
+                int count = pending.Value - (bossOnTheWay && pending.Key == CurrentWave ? 1 : 0);
+                if (count > 0) data.pendingWaveSpawns.Add(new PendingWaveSave { wave = pending.Key, count = count });
+            }
             data.wave = CurrentWave;
             data.timeUntilNextWave = timeUntilNextWave;
             data.enemiesWaitingToSpawn = enemiesWaitingToSpawn - (bossOnTheWay ? 1 : 0);
@@ -225,6 +294,7 @@ namespace AntColony
             {
                 data.enemies.Add(new EnemySave
                 {
+                    wave = enemy.WaveNumber,
                     type = enemy == Boss ? -1 : Mathf.Max(0, types.IndexOf(enemy.Stats)), // -1: the boss
                     position = enemy.Position,
                     health = enemy.Health.Current,
@@ -236,23 +306,36 @@ namespace AntColony
         public void Read(SaveData data)
         {
             CurrentWave = data.wave;
+            HistoryPartial = data.partialWaveHistory || (!data.hasWaveReports && data.wave > 0);
+            historyUnknownThrough = !data.hasWaveReports ? data.wave : data.waveHistoryUnknownThrough;
+            if (HistoryPartial && historyUnknownThrough == 0) historyUnknownThrough = data.wave;
+            reports.Clear();
+            pendingByWave.Clear();
+            if (data.hasWaveReports && data.waveReports != null) reports.AddRange(data.waveReports);
+            if (CurrentWave > 0 && FindReport(CurrentWave) == null) Report(CurrentWave).started = true;
             timeUntilNextWave = data.timeUntilNextWave;
             List<EnemyStats> types = game.Settings.enemyTypes;
             if (types == null || types.Count == 0) return;
 
             foreach (EnemySave saved in data.enemies)
             {
+                int wave = saved.wave > 0 ? saved.wave : Mathf.Max(1, CurrentWave);
                 if (saved.type < 0)
                 {
-                    SpawnBoss(saved.position, saved.healthMultiplier).Health.SetCurrent(saved.health);
+                    SpawnBoss(saved.position, saved.healthMultiplier, wave, recordSpawn: false).Health.SetCurrent(saved.health);
                     continue;
                 }
                 EnemyStats stats = types[Mathf.Clamp(saved.type, 0, types.Count - 1)];
-                Enemy enemy = SpawnEnemyAt(stats, saved.healthMultiplier, saved.position);
+                Enemy enemy = SpawnEnemyAt(stats, saved.healthMultiplier, saved.position, wave, recordSpawn: false);
                 enemy.Health.SetCurrent(saved.health);
             }
             // Enemies of the current wave that hadn't arrived yet still come.
-            if (data.enemiesWaitingToSpawn > 0) StartCoroutine(SpawnWave(Mathf.Max(1, CurrentWave), data.enemiesWaitingToSpawn));
+            if (data.pendingWaveSpawns != null && data.pendingWaveSpawns.Count > 0)
+            {
+                foreach (PendingWaveSave pending in data.pendingWaveSpawns)
+                    if (pending.count > 0) StartCoroutine(SpawnWave(pending.wave, pending.count));
+            }
+            else if (data.enemiesWaitingToSpawn > 0) StartCoroutine(SpawnWave(Mathf.Max(1, CurrentWave), data.enemiesWaitingToSpawn));
             if (data.bossOnTheWay) StartCoroutine(BossArrives());
         }
     }

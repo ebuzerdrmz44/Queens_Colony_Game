@@ -22,6 +22,11 @@ namespace AntColony
         public int worldSeed;
         public string savedAt;
         public bool onSurface;
+        public bool tutorialActive;
+        public int tutorialStep = -1;
+        public bool tutorialGoalStarted;
+        public bool tutorialGoalCompleted;
+        public int tutorialSignals;
 
         // Colony
         public float food;
@@ -46,6 +51,11 @@ namespace AntColony
         public List<FoodSave> foodPiles = new List<FoodSave>();
 
         // Waves
+        public bool hasWaveReports;
+        public bool partialWaveHistory;
+        public int waveHistoryUnknownThrough;
+        public List<WaveReportRecord> waveReports = new List<WaveReportRecord>();
+        public List<PendingWaveSave> pendingWaveSpawns = new List<PendingWaveSave>();
         public int wave;
         public float timeUntilNextWave;
         public int enemiesWaitingToSpawn;
@@ -59,7 +69,19 @@ namespace AntColony
         public void WriteToDisk()
         {
             savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-            File.WriteAllText(FilePath, JsonUtility.ToJson(this));
+            Directory.CreateDirectory(Application.persistentDataPath);
+            string temporary = FilePath + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, JsonUtility.ToJson(this));
+                // Keep the previous complete save if writing or replacing fails.
+                if (File.Exists(FilePath)) File.Replace(temporary, FilePath, FilePath + ".bak");
+                else File.Move(temporary, FilePath);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         /// <summary>The saved game, or null (with the reason) if there is none or it can't be read.</summary>
@@ -142,9 +164,48 @@ namespace AntColony
     [Serializable]
     public class EnemySave
     {
+        public int wave;
         public int type;
         public Vector2 position;
         public float health;
         public float healthMultiplier;
     }
+    [Serializable]
+    public class PendingWaveSave
+    {
+        public int wave;
+        public int count;
+    }
+
+    [Serializable]
+    public class WaveReportRecord
+    {
+        public int wave;
+        public bool started;
+        public bool completed;
+        public bool partial;
+        public int spawned;
+        public int kills;
+        public int workersLost;
+        public int soldiersLost;
+        public int buildersLost;
+        public int spittersLost;
+        public int starved;
+        public int TotalLosses => workersLost + soldiersLost + buildersLost + spittersLost;
+
+        // Role ordinals are the same stable values used by AntSave (worker, soldier, builder, spitter).
+        public void RecordLoss(int role, bool starvation)
+        {
+            switch (role)
+            {
+                case 0: workersLost++; break;
+                case 1: soldiersLost++; break;
+                case 2: buildersLost++; break;
+                case 3: spittersLost++; break;
+                default: return;
+            }
+            if (starvation) starved++;
+        }
+    }
+
 }

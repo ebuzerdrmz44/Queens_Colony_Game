@@ -152,7 +152,7 @@ namespace AntColony
             foreach (Ant ant in ants)
             {
                 if (ant == null || !ant.IsOnSurface) continue;
-                if (Vector2.Distance(ant.Position, center) <= radius + ant.Radius) ant.Health.TakeDamage(antDamage);
+                if (Vector2.Distance(ant.Position, center) <= radius + ant.Radius) ant.Health.TakeDamage(antDamage, boss.WaveNumber);
             }
 
             var structures = new List<Structure>(game.Defenses.Structures);
