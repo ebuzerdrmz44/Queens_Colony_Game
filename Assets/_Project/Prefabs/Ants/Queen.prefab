@@ -196,7 +196,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 56126e79b8a9416bbca508f1f921c88d, type: 3}
   - {fileID: 21300000, guid: c9b4f28fb5e1499f9df512d7eb177bb8, type: 3}
   introLanded: {fileID: 21300000, guid: e028a5609e10441b978ac6ae0fe221f2, type: 3}
-  introNoWings: {fileID: 21300000, guid: 147db990676b4e62b2ddb008e4fad467, type: 3}
   introDig:
   - {fileID: 21300000, guid: 2bc792378de1443781be58c386feb7b8, type: 3}
   - {fileID: 21300000, guid: 5e30f3273c5240aaa2fa65deb26c5098, type: 3}
@@ -204,4 +203,3 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 107b0de9a4034f5e8bf083d18881797d, type: 3}
   - {fileID: 21300000, guid: 6006bc9715804a29b41445fa8cd6925e, type: 3}
   introMound: {fileID: 21300000, guid: 49f7e530432243efa72000ad4de4a5e3, type: 3}
-  introShedWing: {fileID: 21300000, guid: e957da4cfbd94e6686c6b968ed6fa3a5, type: 3}

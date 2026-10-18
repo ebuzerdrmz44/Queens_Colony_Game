@@ -18,7 +18,7 @@ namespace AntColony
         // Timeline, in seconds.
         const float FlyEnd = 4.0f;
         const float LandEnd = 4.5f;
-        const float ShedEnd = 5.6f;
+        const float SettleEnd = 5.6f;
         const float DigEnd = 7.9f;
         const float FadeOutEnd = 8.5f;
         const float NestFadeInEnd = 9.1f;
@@ -60,11 +60,7 @@ namespace AntColony
         Sprite[] topFly;
         Sprite[] topDig;
         Sprite topLanded;
-        Sprite topNoWings;
         Sprite topMound;
-        Sprite topShedWing;
-        readonly List<SpriteRenderer> shedWings = new List<SpriteRenderer>();
-        readonly List<Vector2> shedWingDrift = new List<Vector2>();
 
         Vector3 shadowScale = Vector3.one;
         Transform antHill;
@@ -111,8 +107,6 @@ namespace AntColony
 
             queenActor = game.Art.CreateSprite("Intro Queen", game.SurfaceRoot, TopSprite(topFly, 0, topLanded), SortingOrder.FallingLeaves - 1);
             if (topLanded == null && layFrames == null) GameArt.ScaleToWidth(queenActor, Colony.QueenWidth);
-            shedWings.Clear();
-            shedWingDrift.Clear();
             shadow = game.Art.CreateSprite("Intro Shadow", game.SurfaceRoot, game.Art.Shadow, SortingOrder.Shadows);
             shadow.color = new Color(0f, 0f, 0f, 0.35f);
             GameArt.ScaleToWidth(shadow, 1.6f);
@@ -167,14 +161,13 @@ namespace AntColony
 
         /// <summary>
         /// The meadow, after the storyboard, seen from above: she flies in (wings beating, her shadow on the grass)
-        /// and lands with her head at the hole's rim (1); her wings drop off and lie on the grass (2); then she digs
-        /// in head-first, blow by blow, dirt flying, until only the end of her abdomen shows (3, 4).
+        /// and lands with her head at the hole's rim, folding her wings (1, 2); then she digs in head-first, blow by
+        /// blow, dirt flying, until only the end of her abdomen and wings show (3, 4).
         /// </summary>
         void SurfaceScene()
         {
             Blackness = time < 0.6f ? 1f - time / 0.6f : time > DigEnd ? (time - DigEnd) / (FadeOutEnd - DigEnd) : 0f;
-            string caption = time < LandEnd ? "A young queen searches for a home..."
-                           : time < ShedEnd ? "...sheds her wings..." : "...and digs in.";
+            string caption = time < SettleEnd ? "A young queen searches for a home..." : "...and digs in.";
             SetCaption(caption, time, 0.4f, DigEnd);
 
             const float pixel = 1f / PixelArt.PixelsPerUnit;
@@ -206,28 +199,20 @@ namespace AntColony
                 queenActor.sprite = TopSprite(null, 0, topLanded);
                 PlaceTop(headStop, TopHeadTipPx, 0f, 1f);
             }
-            else if (time < ShedEnd)
+            else if (time < SettleEnd)
             {
-                // A shrug, and her wings drop off, sliding a little way onto the grass.
-                float t = (time - LandEnd) / (ShedEnd - LandEnd);
-                bool shrug = t > 0.15f && t < 0.35f;
-                if (t < 0.35f) queenActor.sprite = TopSprite(null, 0, topLanded);
-                else
-                {
-                    if (shedWings.Count == 0) ShedWings(headStop);
-                    queenActor.sprite = TopSprite(null, 0, topNoWings);
-                }
-                PlaceTop(headStop + (shrug ? Vector2.up * pixel : Vector2.zero), TopHeadTipPx, 0f, 1f);
-                float slide = Mathf.Clamp01((t - 0.35f) / 0.4f);
-                for (int i = 0; i < shedWings.Count; i++)
-                    if (shedWings[i] != null)
-                        shedWings[i].transform.position = (Vector2)shedWings[i].transform.position + shedWingDrift[i] * Time.unscaledDeltaTime * (1f - slide);
+                // Settling at the spot: a last flutter of her wings, then she folds them and shuffles to the rim.
+                float t = (time - LandEnd) / (SettleEnd - LandEnd);
+                bool flutter = t > 0.2f && t < 0.45f;
+                queenActor.sprite = flutter ? TopSprite(topFly, Mathf.FloorToInt(time * FlapFps), topLanded) : TopSprite(null, 0, topLanded);
+                bool shuffle = t > 0.6f && Mathf.FloorToInt(time * 8f) % 2 == 0;
+                PlaceTop(headStop + (shuffle ? Vector2.right * pixel : Vector2.zero), TopHeadTipPx, 0f, 1f);
             }
             else
             {
                 // Digging in, blow by blow: each blow takes her a little further in, head first.
                 const float period = 0.38f;
-                float elapsed = time - ShedEnd;
+                float elapsed = time - SettleEnd;
                 int strike = Mathf.FloorToInt(elapsed / period);
                 float phase = elapsed / period - strike;
                 int frame = Mathf.Min(strike, DigHiddenPx.Length);               // 0: still whole, then the dig-in frames
@@ -242,7 +227,7 @@ namespace AntColony
                 StrikePose(phase, out float push, out float lift, out _);
 
                 float frontPx = TopHeadTipPx;
-                Sprite sprite = TopSprite(null, 0, topNoWings);
+                Sprite sprite = TopSprite(null, 0, topLanded);
                 Vector2 front = headStop;
                 if (frame > 0 && topDig != null && topDig.Length > 0)
                 {
@@ -253,7 +238,7 @@ namespace AntColony
                 }
                 queenActor.sprite = sprite;
                 PlaceTop(front + new Vector2(push * pixel, lift * pixel), frontPx, 0f, 1f);
-                shadow.color = new Color(0f, 0f, 0f, 0.35f * Mathf.Clamp01(1f - elapsed / (DigEnd - ShedEnd)));
+                shadow.color = new Color(0f, 0f, 0f, 0.35f * Mathf.Clamp01(1f - elapsed / (DigEnd - SettleEnd)));
             }
             game.CameraRig.CinematicShot(view + Shake(0.06f), SurfaceZoom);
         }
@@ -269,23 +254,6 @@ namespace AntColony
             queenActor.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
             queenActor.transform.localScale = Vector3.one * scale;
             queenActor.transform.position = front - offset;
-        }
-
-        /// <summary>Her two wings, left lying on the grass either side of where they were, drifting a little apart.</summary>
-        void ShedWings(Vector2 headStop)
-        {
-            if (topShedWing == null) return;
-            Vector2 back = headStop + new Vector2(-1.4f, 0f);
-            for (int side = -1; side <= 1; side += 2)
-            {
-                SpriteRenderer wing = game.Art.CreateSprite("Intro Shed Wing", game.SurfaceRoot, topShedWing, SortingOrder.Food + 1);
-                wing.transform.position = back + new Vector2(0f, side * 0.45f);
-                wing.transform.localRotation = Quaternion.Euler(0f, 0f, side * 18f);
-                wing.flipY = side < 0;
-                shedWings.Add(wing);
-                shedWingDrift.Add(new Vector2(-0.35f, side * 0.5f));
-            }
-            DirtChips.Burst(game, back, Vector2.up, new[] { new Color(0.8f, 0.78f, 0.74f), new Color(0.6f, 0.58f, 0.55f) }, 4);
         }
 
         Sprite TopSprite(Sprite[] frames, int index, Sprite single)
@@ -528,9 +496,6 @@ namespace AntColony
             }
             if (hole != null) Destroy(hole.gameObject);
             hole = null;
-            foreach (SpriteRenderer wing in shedWings) if (wing != null) Destroy(wing.gameObject);
-            shedWings.Clear();
-            shedWingDrift.Clear();
             queenActor = null;
             shadow = null;
         }
@@ -622,7 +587,7 @@ namespace AntColony
         {
             flyFrames = walkFrames = layFrames = null;
             topFly = topDig = null;
-            topLanded = topNoWings = topMound = topShedWing = null;
+            topLanded = topMound = null;
             fallbackQueen = game.Art.Ant;
             GameObject prefab = game.Prefabs.queen;
             if (prefab != null && prefab.TryGetComponent(out QueenAnimator frames))
@@ -633,9 +598,7 @@ namespace AntColony
                 topFly = frames.introFly;
                 topDig = frames.introDig;
                 topLanded = frames.introLanded;
-                topNoWings = frames.introNoWings;
                 topMound = frames.introMound;
-                topShedWing = frames.introShedWing;
             }
             if (prefab != null)
             {
