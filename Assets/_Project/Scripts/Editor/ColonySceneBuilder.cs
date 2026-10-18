@@ -21,17 +21,29 @@ namespace AntColony.EditorTools
         [MenuItem("Ant Colony/Create Game Scene")]
         static void CreateGameScene()
         {
-            if (File.Exists(ScenePath) &&
-                !EditorUtility.DisplayDialog("Ant Colony", $"{ScenePath} already exists. Replace it?", "Replace", "Cancel"))
+            bool exists = File.Exists(ScenePath);
+            if (exists && !EditorUtility.DisplayDialog("Ant Colony",
+                    $"{ScenePath} already exists. Rebuild it?\n\nThe Colony Game settings in it (effects, prefabs, waves, audio, UI skin, art...) are kept.",
+                    "Rebuild", "Cancel"))
                 return;
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            // Keep the team's settings: read them from the existing scene before it is replaced.
+            string keptSettings = null;
+            if (exists)
+            {
+                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                ColonyGame existing = Object.FindFirstObjectByType<ColonyGame>();
+                if (existing != null) keptSettings = EditorJsonUtility.ToJson(existing);
+            }
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             CreateCamera();
             CreateGlobalLight();
 
             ColonyGame game = new GameObject("Colony Game").AddComponent<ColonyGame>();
+            if (keptSettings != null) EditorJsonUtility.FromJsonOverwrite(keptSettings, game);
             // Keeps prefabs that already exist, so a new scene picks up the team's edited ones.
             PrefabGenerator.Generate(game, replace: false);
 

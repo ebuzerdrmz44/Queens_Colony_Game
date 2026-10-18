@@ -61,10 +61,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1203915741379893387, guid: 9b075fdf141601dc5b9cbd442973a3f7, type: 3}
-      propertyPath: emitterVelocityMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1203915741379893387, guid: 9b075fdf141601dc5b9cbd442973a3f7, type: 3}
       propertyPath: moveWithTransform
       value: 0
       objectReference: {fileID: 0}
@@ -75,6 +71,10 @@ PrefabInstance:
     - target: {fileID: 1203915741379893387, guid: 9b075fdf141601dc5b9cbd442973a3f7, type: 3}
       propertyPath: ShapeModule.enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1203915741379893387, guid: 9b075fdf141601dc5b9cbd442973a3f7, type: 3}
+      propertyPath: emitterVelocityMode
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1203915741379893387, guid: 9b075fdf141601dc5b9cbd442973a3f7, type: 3}
       propertyPath: EmissionModule.enabled

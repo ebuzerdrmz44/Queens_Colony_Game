@@ -439,6 +439,8 @@ MonoBehaviour:
     foodMinNearPiles: 4
     foodBigPileChance: 0.3
     foodHugePileChance: 0.1
+    foodBigPileGrowth: 0.12
+    playIntro: 1
     firstWaveDelay: 150
     timeBetweenWaves: 75
     wavesToWin: 10
@@ -545,7 +547,7 @@ MonoBehaviour:
     bossDied: {fileID: 0}
     bossQuake: {fileID: 0}
     bossMegaSpit: {fileID: 0}
-    bossMegaSpitHit: {fileID: 0}
+    bossMegaSpitHit: {fileID: 952659974421341823, guid: f6a33acf7e01c237aa8794e04191ca64, type: 3}
     bossGlobTrail: {fileID: 0}
   uiSkin:
     panel: {fileID: 2800000, guid: 49a1606d702e4514c9968e55b0dba3d6, type: 3}
