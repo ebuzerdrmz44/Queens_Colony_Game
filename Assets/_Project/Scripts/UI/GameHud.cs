@@ -2754,6 +2754,7 @@ namespace AntColony
                     facesLeft = game.Art.AntSideFacesLeft;
                     tint = CasteArt(role).tint;
                 }
+                if (frames == null || frames.Length == 0) continue;
                 Sprite still = frames.Length > 1 && frames[1] != null ? frames[1] : System.Array.Find(frames, s => s != null);
                 if (still == null) continue;
 
@@ -2762,15 +2763,16 @@ namespace AntColony
                 float length = stripRight - stripLeft - size.x;
                 if (length < size.x) break;
 
-                // To the right, rest, back to the left, rest.
+                // Ease into and out of each trip, then rest. Gait still follows actual distance,
+                // so the legs slow down with the body rather than sliding over the ground.
                 float pace = speed * pixel / 5f;
                 float walk = length / pace;
                 float t = Mathf.Repeat(time + phase, 2f * (walk + rest));
                 float along, travelled = 0f;
                 bool moving = true, goingRight = true;
-                if (t < walk) { along = t * pace; travelled = along; }
+                if (t < walk) { along = length * Mathf.SmoothStep(0f, 1f, t / walk); travelled = along; }
                 else if (t < walk + rest) { along = length; moving = false; }
-                else if (t < walk * 2f + rest) { travelled = (t - walk - rest) * pace; along = length - travelled; goingRight = false; }
+                else if (t < walk * 2f + rest) { travelled = length * Mathf.SmoothStep(0f, 1f, (t - walk - rest) / walk); along = length - travelled; goingRight = false; }
                 else { along = 0f; moving = false; goingRight = false; }
 
                 Sprite sprite = still;
@@ -2798,6 +2800,12 @@ namespace AntColony
                 if (goingRight == facesLeft) uv = new Rect(uv.xMax, uv.y, -uv.width, uv.height);
                 GUI.color = tint;
                 GUI.DrawTextureWithTexCoords(destination, texture, uv);
+
+                // The worker returns with a leaf, then drops it off before the next foraging trip.
+                // Reuse the game's art; no gameplay objects or paused-world simulation are involved.
+                if (role == AntRole.Worker && moving && !goingRight)
+                    Icon(new Vector2(destination.x + size.x * 0.2f, destination.y + size.y * 0.35f),
+                        game.Art.Leaf, Color.white, maxSize: pixel * 6f);
             }
             GUI.color = previous;
         }
