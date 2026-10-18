@@ -224,8 +224,9 @@ namespace AntColony
             if (!FollowRoute()) return;
 
             Colony colony = Game.Colony;
-            if (carriedKind == FoodKind.Leaves) colony.AddLeaves(carriedAmount);
-            else colony.AddFood(carriedAmount, foraged: true);
+            bool leaves = carriedKind == FoodKind.Leaves;
+            int stored = leaves ? colony.AddLeaves(carriedAmount) : colony.AddFood(carriedAmount, foraged: true);
+            if (stored > 0) Game.Hud.FloatText(Position + Vector2.up * 0.6f, $"+{stored}", leaves ? GameHud.LeavesColor : GameHud.FoodColor);
             colony.Stats.AddTrip(Time.time - tripStartTime);
             Game.PlayEffect(EffectKind.FoodStored, Position);
             Game.Audio.Play(carriedKind == FoodKind.Leaves ? Sound.LeavesStored : Sound.FoodStored, Position);

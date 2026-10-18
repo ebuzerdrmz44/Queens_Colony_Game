@@ -31,11 +31,15 @@ namespace AntColony
             bar.SetFraction(1f);
         }
 
+        /// <summary>Raised on every hit (for the floating damage numbers).</summary>
+        public static event System.Action<Health, float> Damaged;
+
         public void TakeDamage(float amount)
         {
             if (IsDead || amount <= 0f) return;
 
             Current = Mathf.Max(0f, Current - amount);
+            Damaged?.Invoke(this, amount);
             bar.SetFraction(Fraction);
             body.color = FlashColor;
             flashTimeLeft = FlashDuration;

@@ -35,8 +35,10 @@ namespace AntColony
         /// <summary>When it last fought, so the status can say "fighting" for a moment after each blow.</summary>
         float lastFightTime = -10f;
         SpriteRenderer selectionRing;
-        float bestDistance = float.MaxValue;
         float noProgressTime;
+        /// <summary>A route to the current post is planned (cleared when the post moves or a fight starts).</summary>
+        bool routeToPost;
+        Vector2 progressPoint;
 
         public override AntRole Role => AntRole.Soldier;
         public bool IsSelected { get; private set; }
@@ -52,6 +54,7 @@ namespace AntColony
             target = null;
             ResetProgress();
             ClearRoute();
+            routeToPost = false;
         }
 
         public void OrderAttack(Enemy enemy)
@@ -128,8 +131,6 @@ namespace AntColony
                 return;
             }
 
-            ClearRoute();
-
             switch (order)
             {
                 case Order.Attack:
@@ -137,9 +138,10 @@ namespace AntColony
                     {
                         order = Order.Guard;
                         post = Position;
+                        routeToPost = false;
                         break;
                     }
-                    lastFightTime = Time.time;
+                    StartFighting();
                     Fight(target);
                     break;
 
@@ -165,8 +167,16 @@ namespace AntColony
                 return;
             }
 
-            lastFightTime = Time.time;
+            StartFighting();
             Fight(enemy);
+        }
+
+        /// <summary>A fight is fought head-on: drop the walking route (a new one is planned to get back to the post).</summary>
+        void StartFighting()
+        {
+            lastFightTime = Time.time;
+            if (routeToPost) ClearRoute();
+            routeToPost = false;
         }
 
         /// <summary>
@@ -182,29 +192,40 @@ namespace AntColony
                 return true;
             }
 
-            if (distance < bestDistance - 0.05f)
+            // Progress means moving at all: a route around a rock can lead away from the post for a while.
+            if (Vector2.Distance(Position, progressPoint) > 0.1f)
             {
-                bestDistance = distance;
+                progressPoint = Position;
                 noProgressTime = 0f;
             }
             else
             {
                 noProgressTime += Time.deltaTime;
-                if (noProgressTime > GiveUpTime)
+                if (noProgressTime > GiveUpTime * 2f)
                 {
+                    // Crowded at the spot: stay here.
                     post = Position;
                     ResetProgress();
+                    ClearRoute();
+                    routeToPost = false;
                     return true;
                 }
             }
 
-            StepTowards(post);
+            // Around rocks, logs and finished walls along a planned route; the last bit straight.
+            if (!routeToPost)
+            {
+                GoTo(post);
+                routeToPost = true;
+            }
+            if (HasRoute) FollowRoute();
+            else StepTowards(post);
             return false;
         }
 
         void ResetProgress()
         {
-            bestDistance = float.MaxValue;
+            progressPoint = Position;
             noProgressTime = 0f;
         }
 

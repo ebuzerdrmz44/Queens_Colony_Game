@@ -106,11 +106,82 @@ namespace AntColony
         {
             game = colonyGame;
             hoverParticles ??= new UiParticles(transform);
+            Health.Damaged -= ShowDamage;
+            Health.Damaged += ShowDamage;
+        }
+
+        // ---------- Floating numbers ----------
+
+        public static readonly Color FoodColor = AutumnPalette.Gold;
+        public static readonly Color LeavesColor = AutumnPalette.Orange;
+        public static readonly Color StoneColor = new Color(0.78f, 0.78f, 0.74f);
+        static readonly Color EnemyDamageColor = new Color(1f, 0.95f, 0.85f);
+
+        /// <summary>A number or word that rises from a spot in the world and fades.</summary>
+        struct Floater
+        {
+            public Vector2 World;
+            public string Text;
+            public Color Color;
+            public float Age;
+            public bool OnSurface;
+        }
+
+        const float FloaterLife = 1.1f;
+        const int MaxFloaters = 80;
+        readonly List<Floater> floaters = new List<Floater>();
+
+        /// <summary>Shows <paramref name="text"/> rising from <paramref name="world"/> (e.g. "+3" for stored food).</summary>
+        public void FloatText(Vector2 world, string text, Color color)
+        {
+            if (floaters.Count >= MaxFloaters) floaters.RemoveAt(0);
+            // A little sideways jitter, so numbers from the same spot don't sit on top of each other.
+            world.x += UnityEngine.Random.Range(-0.15f, 0.15f);
+            floaters.Add(new Floater { World = world, Text = text, Color = color, OnSurface = game.Surface.IsOnSurface(world) });
+        }
+
+        void ShowDamage(Health health, float amount)
+        {
+            if (health == null || game == null || game.Surface == null) return;
+            bool enemy = health.GetComponent<Enemy>() != null;
+            Vector2 at = (Vector2)health.transform.position + Vector2.up * 0.5f;
+            FloatText(at, Mathf.Max(1, Mathf.RoundToInt(amount)).ToString(), enemy ? EnemyDamageColor : Bad);
+        }
+
+        /// <summary>Rises in whole pixel steps (stepped, like the rest of the art) and fades out at the end.</summary>
+        void DrawFloaters()
+        {
+            if (floaters.Count == 0) return;
+            Camera view = game.CameraRig.Camera;
+            bool surface = game.CameraRig.View == CameraView.Surface;
+            foreach (Floater floater in floaters)
+            {
+                if (floater.OnSurface != surface) continue;
+                Vector3 screen = view.WorldToScreenPoint(floater.World);
+                if (screen.z < 0f) continue;
+                float rise = Mathf.Floor(floater.Age * 10f) * 2f;
+                var center = new Vector2(screen.x / guiScale, (Screen.height - screen.y) / guiScale - rise);
+                Color color = floater.Color;
+                color.a = Mathf.Clamp01((FloaterLife - floater.Age) / 0.35f);
+                Text(new Rect(center.x - 60f, center.y - 8f, 120f, 16f), floater.Text, color, small, TextAnchor.MiddleCenter);
+            }
+        }
+
+        void UpdateFloaters(float deltaTime)
+        {
+            for (int i = floaters.Count - 1; i >= 0; i--)
+            {
+                Floater floater = floaters[i];
+                floater.Age += deltaTime;
+                if (floater.Age >= FloaterLife) floaters.RemoveAt(i);
+                else floaters[i] = floater;
+            }
         }
 
         void Update()
         {
             hoverParticles?.Update(Time.unscaledDeltaTime);
+            UpdateFloaters(Time.deltaTime); // pause with the game
             hoverParticleCooldown -= Time.unscaledDeltaTime;
         }
 
@@ -214,6 +285,7 @@ namespace AntColony
             }
 
             DrawRoomLabels(scale);
+            if (Event.current.type == EventType.Repaint) DrawFloaters();
             DrawSelectionBox(scale);
             DrawSceneFade(screenWidth);
 
@@ -294,6 +366,7 @@ namespace AntColony
 
         void OnDestroy()
         {
+            Health.Damaged -= ShowDamage;
             hoverParticles?.Clear();
             foreach (Texture2D texture in createdTextures) Destroy(texture);
             font?.Destroy();
@@ -1749,6 +1822,13 @@ namespace AntColony
             }
         }
 
+        /// <summary>Which enemy each edge arrow last jumped to, so clicking again moves on to the next one.</summary>
+        readonly int[] warningClicks = new int[4];
+
+        /// <summary>
+        /// Arrows at the screen edges counting enemies off screen on that side. Click one to look at the nearest of
+        /// them; click again for the next.
+        /// </summary>
         void DrawEnemyWarnings(float screenWidth)
         {
             IReadOnlyList<Enemy> enemies = game.Waves.Enemies;
@@ -1760,27 +1840,56 @@ namespace AntColony
             float halfHeight = viewCamera.orthographicSize;
             float halfWidth = halfHeight * viewCamera.aspect;
 
-            int left = 0, right = 0, above = 0, below = 0;
+            // 0 left, 1 right, 2 above, 3 below.
+            var sides = new List<Enemy>[] { new List<Enemy>(), new List<Enemy>(), new List<Enemy>(), new List<Enemy>() };
             foreach (Enemy enemy in enemies)
             {
+                if (enemy == null) continue;
                 Vector2 offset = enemy.Position - center;
                 if (Mathf.Abs(offset.x) <= halfWidth && Mathf.Abs(offset.y) <= halfHeight) continue;
 
                 // Sort by which edge of the screen the enemy is beyond the most.
-                if (Mathf.Abs(offset.x) / halfWidth > Mathf.Abs(offset.y) / halfHeight)
-                {
-                    if (offset.x < 0f) left++;
-                    else right++;
-                }
-                else if (offset.y > 0f) above++;
-                else below++;
+                if (Mathf.Abs(offset.x) / halfWidth > Mathf.Abs(offset.y) / halfHeight) sides[offset.x < 0f ? 0 : 1].Add(enemy);
+                else sides[offset.y > 0f ? 2 : 3].Add(enemy);
             }
 
             float middle = screenHeight * 0.45f;
-            if (left > 0) Text(new Rect(Margin, middle, 200f, 20f), $"< {left} enemies", Bad, medium);
-            if (right > 0) Text(new Rect(screenWidth - Margin - 200f, middle, 200f, 20f), $"{right} enemies >", Bad, medium, TextAnchor.UpperRight);
-            if (above > 0) Text(new Rect(0f, 52f, screenWidth, 20f), $"^ {above} enemies ^", Bad, medium, TextAnchor.UpperCenter);
-            if (below > 0) Text(new Rect(0f, screenHeight - 130f, screenWidth, 20f), $"v {below} enemies v", Bad, medium, TextAnchor.UpperCenter);
+            var rects = new[]
+            {
+                new Rect(Margin, middle, 180f, 22f),
+                new Rect(screenWidth - Margin - 180f, middle, 180f, 22f),
+                new Rect(screenWidth * 0.5f - 100f, 52f, 200f, 22f),
+                new Rect(screenWidth * 0.5f - 100f, screenHeight - 130f, 200f, 22f),
+            };
+            for (int side = 0; side < 4; side++)
+            {
+                int count = sides[side].Count;
+                if (count == 0) continue;
+                string noun = count == 1 ? "enemy" : "enemies";
+                string label = side == 0 ? $"< {count} {noun}" : side == 1 ? $"{count} {noun} >" : side == 2 ? $"^ {count} {noun} ^" : $"v {count} {noun} v";
+                TextAnchor anchor = side == 0 ? TextAnchor.MiddleLeft : side == 1 ? TextAnchor.MiddleRight : TextAnchor.MiddleCenter;
+                Rect rect = rects[side];
+                bool hovered = MouseOver(rect);
+                if (hovered)
+                {
+                    Color previous = GUI.color;
+                    GUI.color = new Color(0f, 0f, 0f, 0.35f);
+                    GUI.DrawTexture(Snap(rect), Texture2D.whiteTexture);
+                    GUI.color = previous;
+                }
+                Text(rect, label, hovered ? Cream : Bad, medium, anchor);
+                uiRects.Add(rect);
+                if (HudButton(rect, GUIStyle.none)) JumpToEnemy(sides[side], side, center);
+            }
+        }
+
+        /// <summary>Turns the camera to the nearest enemy of a side, or the next one on each further click.</summary>
+        void JumpToEnemy(List<Enemy> enemies, int side, Vector2 from)
+        {
+            enemies.Sort((a, b) => Vector2.Distance(a.Position, from).CompareTo(Vector2.Distance(b.Position, from)));
+            Enemy enemy = enemies[warningClicks[side] % enemies.Count];
+            warningClicks[side]++;
+            game.CameraRig.FocusSurface(enemy.Position);
         }
 
         /// <summary>The box being dragged to select soldiers.</summary>
