@@ -24,8 +24,8 @@ wall / tower destroyed. Drop any prefab in (usually a Particle System with Play 
 at that spot and removed when its particles are done. Set its renderer's **Order in Layer** to about 25 so it shows above units.
 
 ## How to play
-The game opens on a **main menu** (New game, Continue, How to play, Quit). Esc pauses; the pause menu can **save**,
-**load** and go back to the menu. **F5** saves and **F9** loads at any time. There is one save slot, kept in
+The game opens on a **main menu** (New game, Tutorial, Continue, How to play, Settings, Quit). Esc pauses; the pause menu can **save**,
+**load** and go back to the menu with a save/discard/cancel confirmation. Settings includes a persistent autosave toggle (default ON); it saves after all active waves clear. New game and Tutorial ask before replacing an existing save. **F5** saves and **F9** loads at any time. There is one save slot, kept in
 `Application.persistentDataPath/colony-save.json`. It only loads into a world with the same **worldSeed** and nest size,
 because rock and scenery are rebuilt from the seed.
 
@@ -57,6 +57,15 @@ Underground is a grid of soil, pebbly **stone veins**, solid grey **rock** (can'
   and fill empty tunnels back in. It never fills a tile that would cut a room off from the entrance.
 - While you drag, every tile that will change lights up (gold: dig, red: room removed, brown: tunnel filled,
   orange: dig mark cancelled) and the hint above the buttons counts them.
+
+### Tutorial and movable panels
+Normal **New game** never starts the tutorial automatically. Use **Tutorial** to start it explicitly;
+Continue preserves a saved tutorial. Independent tutorial tasks offer **Skip step**, while gathering
+and digging remain required preparation. Skipping a view-switch instruction still selects the next
+required view. **Skip tutorial** always exits the whole guide.
+
+Drag the **Missions** title bar to move the panel. Its position is kept while the game is running and
+clamped to the screen when resized. During the tutorial it initially opens below the guide.
 
 ### Knowing what to do
 - **Advisor card** (top right): the most important tip right now, e.g. leaves piling up, storage full, hungry larvae.

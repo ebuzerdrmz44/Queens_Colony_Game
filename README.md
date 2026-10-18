@@ -29,15 +29,57 @@ is in the scene list (it's first) → **Build**. Run the built executable to pla
 
 ## How to play
 
-The first **New game** runs a short tutorial. The main menu also has a **Tutorial** button to replay it.
+**New game** always starts normal play. Choose **Tutorial** in the main menu to start the guide; **Continue** restores the tutorial only if it was part of your saved game.
+
+The tutorial waits for completed actions: bringing a load home, hatching a worker, finishing a dig,
+and finishing construction. When a goal is done, choose **Next** at your own pace. **Read again**
+reopens the current explanation; **Skip step** skips an independent task (including waiting for a larva). Gathering and digging are required setup steps, so their individual skip button is disabled. Skipping a view-switch step still opens the view needed for the next task. **Skip tutorial** ends the entire guide. Waves wait during the tutorial,
+and completing it gives at least 45 seconds to prepare. Saving also keeps your tutorial step and progress.
+
+### Wave report
+
+Click the wave banner at the top to open a draggable **Wave report**. Left/right arrows browse
+only waves that have already started; future waves are hidden. Before the first attack, the panel
+shows an empty state. Opening it again selects the latest started wave.
+
+Each wave has an illustrated battle card for enemy kills and remaining enemies (including pending
+arrivals), plus portrait cards for soldier, spitter, worker and builder losses. Combat losses follow
+the enemy that dealt the fatal blow, even when waves overlap. Non-combat losses and starvation
+are summarised separately below the cards. Drag the title to move the window; X or Esc closes it.
+
+The history is saved with the colony. Old saves cannot reconstruct past battles: unknown history
+is shown as `--`, and `+` marks partial counts recorded since loading. Subsequent new waves have
+complete records. The Music/Pause icons keep their hover appearance and sound, without hover particles.
+
+### Music and pause
+
+The advisor card sits above two smaller, text-free pixel icons in the top-right HUD: a music note and pause bars (a play triangle while paused). The music note opens a centred
+player that can be moved by dragging its title bar. It contains the current track, previous/next controls, the full playlist, and the **Wave music**
+toggle. On wider screens, existing worker/soldier/builder/spitter artwork appears beside the playlist, crossfading when the playing or selected track changes. Picking a track keeps the player open. Long lists can be scrolled or navigated with the
+up/down buttons. Close it with X or Esc. The player is also available while paused.
+
+### Saving and settings
+
+- **Settings** is available from the title and pause menus. It contains sound controls and
+  **Autosave after waves**, which is ON by default and remembered between sessions.
+- Autosave writes after the battlefield is cleared, including all pending enemies and the final boss.
+  If you call overlapping waves early, it saves once the combined attack is cleared.
+- Autosave and **F5 / Save game** use the same slot. **F9 / Continue** loads that slot.
+- Returning to the main menu from pause offers **Save and return**, **Leave without saving**, and **Cancel**.
+  If saving fails, the game stays open and shows an error.
+- Starting **New game**, **Tutorial**, or **Play again** asks before replacing an existing save.
+  Confirming creates a new starting checkpoint. Cancel keeps the previous game.
+- Saves are written through a temporary file and replaced only after writing succeeds. The previous
+  complete save is kept as `colony-save.json.bak` in the game's persistent data directory.
+
 
 | Key | Action |
 |---|---|
 | WASD / arrows, mouse wheel | move / zoom the camera |
 | Tab | switch between the meadow (surface) and the nest (underground) |
 | 1 / 2 / 3 / Z | raise a worker / soldier / builder / acid spitter |
-| M | missions (jobs for workers and builders) |
-| R | colony report |
+| M | missions (jobs for workers and builders); drag the title bar to move the panel |
+| R | colony report; drag its title bar to move it |
 | H | controls |
 | N | call the next wave early |
 | Esc | put a tool down, close a panel, or pause |

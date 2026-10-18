@@ -116,3 +116,6 @@ InitTestScene*.unity*
 # Unity crash-recovery scenes
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta
+
+# Local development handoff notes
+/DEVELOPMENT_HANDOFF.md
