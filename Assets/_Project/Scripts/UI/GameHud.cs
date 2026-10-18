@@ -1835,19 +1835,28 @@ namespace AntColony
             var image = new Rect(area.x + 10f, area.y + 44f, area.width - 20f, area.height - 86f);
             float blend = previousPortrait < 0 ? 1f : Mathf.Clamp01((Time.unscaledTime - portraitChangedAt) / 0.6f);
             Color before = GUI.color;
-            if (previousPortrait >= 0 && previousPortrait < portraits.Length && portraits[previousPortrait]?.image != null)
+            Texture2D previousImage = previousPortrait >= 0 && previousPortrait < portraits.Length
+                ? MusicPortraitImage(portraits[previousPortrait]) : null;
+            if (previousImage != null)
             {
                 GUI.color = new Color(before.r, before.g, before.b, before.a * (1f - blend));
-                GUI.DrawTexture(image, portraits[previousPortrait].image, ScaleMode.ScaleToFit);
+                GUI.DrawTexture(image, previousImage, ScaleMode.ScaleToFit);
             }
             UiSkin.MusicPortrait current = portraits[portraitIndex];
-            if (current?.image != null)
+            Texture2D currentImage = MusicPortraitImage(current);
+            if (currentImage != null)
             {
                 GUI.color = new Color(before.r, before.g, before.b, before.a * blend);
-                GUI.DrawTexture(image, current.image, ScaleMode.ScaleToFit);
+                GUI.DrawTexture(image, currentImage, ScaleMode.ScaleToFit);
             }
             GUI.color = before;
             Text(new Rect(area.x + 8f, area.yMax - 32f, area.width - 16f, 20f), current?.caption ?? "", Cream, medium, TextAnchor.MiddleCenter);
+        }
+
+        static Texture2D MusicPortraitImage(UiSkin.MusicPortrait portrait)
+        {
+            if (portrait == null) return null;
+            return portrait.musicImage != null ? portrait.musicImage : portrait.image;
         }
 
         // ---------- Tutorial ----------

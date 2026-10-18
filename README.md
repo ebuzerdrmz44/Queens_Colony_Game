@@ -55,7 +55,7 @@ complete records. The Music/Pause icons keep their hover appearance and sound, w
 
 The advisor card sits above two smaller, text-free pixel icons in the top-right HUD: a music note and pause bars (a play triangle while paused). The music note opens a centred
 player that can be moved by dragging its title bar. It contains the current track, previous/next controls, the full playlist, and the **Wave music**
-toggle. On wider screens, existing worker/soldier/builder/spitter artwork appears beside the playlist, crossfading when the playing or selected track changes. Picking a track keeps the player open. Long lists can be scrolled or navigated with the
+toggle. On wider screens, existing worker/soldier/builder/spitter artwork with music-only headphones appears beside the playlist, crossfading when the playing or selected track changes. Picking a track keeps the player open. Long lists can be scrolled or navigated with the
 up/down buttons. Close it with X or Esc. The player is also available while paused.
 
 ### Saving and settings
@@ -96,3 +96,7 @@ right-click to move or attack, E selects all soldiers, Q halves the group.
 - Most tuning (costs, speeds, waves, the boss, audio, UI images, effect prefabs) lives on the **Colony Game** object in
   the scene's Inspector. More details are in `Assets/_Project/README.md`.
 - In the editor, **F8** during Play sets up a test of the final boss wave (and saves it, so F9 replays it).
+
+Music portrait variants live in `Assets/_Project/Art/UI/MusicPortraits`. Each UI Skin portrait has
+an optional `musicImage` used only by the player; wave reports use its original `image`.
+If the variant is empty, music falls back to the original portrait.

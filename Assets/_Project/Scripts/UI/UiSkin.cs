@@ -96,6 +96,8 @@ namespace AntColony
         public class MusicPortrait
         {
             public Texture2D image;
+            [Tooltip("Optional music-only variant. Reports continue to use the normal image.")]
+            public Texture2D musicImage;
             public string caption;
         }
         [Header("Music gallery")]
@@ -143,6 +145,12 @@ namespace AntColony
                     musicPortraits[i] = new MusicPortrait { caption = roles[i] };
                     changed |= Fill(ref musicPortraits[i].image, sprites + "Ant_" + roles[i] + "_UD.png");
                 }
+            }
+            foreach (MusicPortrait portrait in musicPortraits)
+            {
+                if (portrait == null) continue;
+                changed |= Fill(ref portrait.musicImage,
+                    "Assets/_Project/Art/UI/MusicPortraits/Ant_" + portrait.caption + "_Headphones.png");
             }
             return changed;
         }
