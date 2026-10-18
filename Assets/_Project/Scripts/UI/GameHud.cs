@@ -49,7 +49,10 @@ namespace AntColony
             public string Label;
             public Sprite Icon;
             public Color IconTint;
+            /// <summary>A small badge in the button's corner (e.g. how many piles are marked); costs go in the tooltip.</summary>
             public string Cost;
+            public int FoodCost;
+            public int StoneCost;
             public string TooltipTitle;
             public string Tooltip;
             public bool Available;
@@ -1038,7 +1041,7 @@ namespace AntColony
                 BuildMode buildMode = game.BuildMode;
                 actions.Add(new ActionSpec
                 {
-                    Key = "4", Label = "Wall", Icon = art.Wall, IconTint = Color.white, Cost = Loc.F("{0}S", settings.wallCost),
+                    Key = "4", Label = "Wall", Icon = art.Wall, IconTint = Color.white, Cost = "", StoneCost = settings.wallCost,
                     TooltipTitle = "Wall", Tooltip = Loc.F("Drag a line on the surface. {0} stone per block (dig for stone). " +
                                                      "Enemies must chew through walls, and your ants walk around them: leave a gap so they can get out!", settings.wallCost),
                     Available = game.Colony.Stone >= settings.wallCost, Active = buildMode.IsActive && buildMode.Kind == StructureKind.Wall,
@@ -1046,7 +1049,7 @@ namespace AntColony
                 });
                 actions.Add(new ActionSpec
                 {
-                    Key = "5", Label = "Tower", Icon = art.Tower, IconTint = Color.white, Cost = Loc.F("{0}+{1}S", settings.towerCost, settings.towerStoneCost),
+                    Key = "5", Label = "Tower", Icon = art.Tower, IconTint = Color.white, Cost = "", FoodCost = settings.towerCost, StoneCost = settings.towerStoneCost,
                     TooltipTitle = "Acid tower", Tooltip = Loc.F("Click to place. {0} food and {1} stone. " +
                                                            "Spits acid at enemies in range (hover a tower to see its range). Ants walk around towers.",
                                                            settings.towerCost, settings.towerStoneCost),
@@ -1123,7 +1126,7 @@ namespace AntColony
             return new ActionSpec
             {
                 Key = key, Label = queued > 0 ? $"{Loc.T(label)} +{queued}" : label, Icon = icon, IconTint = tint,
-                Cost = $"{settings.RaiseCost(role)}",
+                Cost = "", FoodCost = settings.RaiseCost(role),
                 TooltipTitle = Loc.F("Raise a {0}", Loc.T(label)),
                 Tooltip = Loc.T(description) + Loc.F("\nEgg {0} food, then workers feed the larva {1} food. Needs a free cradle.", settings.eggCost, costs.larvaFood),
                 Available = game.Colony.Food >= settings.eggCost,
@@ -1138,7 +1141,7 @@ namespace AntColony
             int cost = RoomInfo.CostOf(type, game.Settings);
             return new ActionSpec
             {
-                Key = key, Label = tool == NestTool.Garden ? "Garden" : info.Name, Icon = icon, IconTint = Color.white, Cost = $"{cost}",
+                Key = key, Label = tool == NestTool.Garden ? "Garden" : info.Name, Icon = icon, IconTint = Color.white, Cost = "", FoodCost = cost,
                 TooltipTitle = Loc.F("{0}  ({1}x{2} tiles)", Loc.T(info.Name), info.Size.x, info.Size.y), Tooltip = Loc.T(description) + "\n" + Loc.T("Place it on dug-out tunnel."),
                 Available = game.Colony.Food >= cost, Active = game.NestTools.Tool == tool,
                 OnClick = () => game.NestTools.Toggle(tool),
@@ -1303,17 +1306,44 @@ namespace AntColony
         {
             const float width = 260f;
             float innerWidth = width - 24f;
-            string body = string.IsNullOrEmpty(action.Cost) ? action.Tooltip : Loc.T(action.Tooltip) + Loc.F("\nCost: {0} food", action.Cost);
+            string body = action.Tooltip;
             float titleHeight = font.MeasureHeight(action.TooltipTitle, medium, innerWidth);
             float bodyHeight = font.MeasureHeight(body, small, innerWidth);
-            float height = 18f + titleHeight + 4f + bodyHeight;
+            bool hasCost = action.FoodCost > 0 || action.StoneCost > 0;
+            const float costHeight = 26f;
+            float height = 18f + titleHeight + 4f + bodyHeight + (hasCost ? costHeight + 4f : 0f);
 
             float x = Mathf.Clamp(button.center.x - width * 0.5f, Margin, screenWidth - Margin - width);
             var panel = new Rect(x, button.y - height - 34f, width, height);
             Panel(panel);
             float y = panel.y + 9f;
             y += Text(new Rect(panel.x + 12f, y, innerWidth, titleHeight), action.TooltipTitle, Gold, medium) + 4f;
-            Text(new Rect(panel.x + 12f, y, innerWidth, bodyHeight), body, Cream, small);
+            y += Text(new Rect(panel.x + 12f, y, innerWidth, bodyHeight), body, Cream, small) + 4f;
+            if (hasCost) DrawCostRow(new Rect(panel.x + 12f, y, innerWidth, costHeight), action.FoodCost, action.StoneCost);
+        }
+
+        /// <summary>"Cost:" with a food and/or stone icon and amount each; red where the colony can't pay.</summary>
+        void DrawCostRow(Rect row, int food, int stone)
+        {
+            Color previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.25f);
+            GUI.DrawTexture(Snap(row), Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            UiSkin skin = game.UiSkin;
+            float x = row.x + 6f;
+            Text(new Rect(x, row.y, 80f, row.height), "Cost:", Muted, small, TextAnchor.MiddleLeft);
+            x += font.Measure("Cost:", small) + 12f;
+            if (food > 0) x = CostPart(x, row, SkinIcon(skin?.iconFood, game.Art.Berry), food, game.Colony.Food >= food);
+            if (stone > 0) CostPart(x, row, SkinIcon(skin?.iconStone, game.Art.Pebble), stone, game.Colony.Stone >= stone);
+        }
+
+        float CostPart(float x, Rect row, Sprite icon, int amount, bool affordable)
+        {
+            Icon(new Vector2(x + 9f, row.center.y), icon, maxSize: 18f);
+            string text = amount.ToString();
+            Text(new Rect(x + 22f, row.y, 60f, row.height), text, affordable ? Gold : Bad, medium, TextAnchor.MiddleLeft);
+            return x + 22f + font.Measure(text, medium) + 16f;
         }
 
         /// <summary>One line above the buttons explaining the tool in hand, or the soldier selection.</summary>
