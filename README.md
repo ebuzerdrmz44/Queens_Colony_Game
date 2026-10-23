@@ -102,12 +102,8 @@ Drag a box to select soldiers, right-click to move or attack, `E` selects all so
 
 ## Team
 
-<!-- Add everyone's name, role and GitHub link -->
-
-| | Name | Role |
-|---|---|---|
-| | [Ebuzer Celil Durmaz](https://github.com/ebuzerdrmz44) | |
-| | Furkan Mutlu | |
+- [Ebuzer Celil Durmaz](https://github.com/ebuzerdrmz44)
+- [Furkan Mutlu](https://github.com/fmutlu68)
 
 ## For developers
 
